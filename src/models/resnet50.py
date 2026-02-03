@@ -35,7 +35,7 @@ class ResNet50(L.LightningModule):
     
     def training_step(self, batch, batch_idx):
         self.train()
-        x, y = batch
+        x, y = batch["image"], batch["target"]
         logits = self(x)
         loss = self.loss(logits, y)
         acc = self.training_acc(logits, y)
@@ -45,7 +45,7 @@ class ResNet50(L.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         self.eval()
-        x, y = batch
+        x, y = batch["image"], batch["target"]
         logits = self(x)
         l = self.loss(logits, y)
         acc = self.valid_acc(logits, y)
