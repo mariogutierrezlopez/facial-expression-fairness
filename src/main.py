@@ -4,6 +4,7 @@ from src.models.resnet50 import ResNet50
 from src.data.datamodule import MultiPIEDataModule
 
 from lightning.pytorch.loggers import WandbLogger
+from lightning.pytorch.callbacks import ModelCheckpoint
 
 
 if __name__ == "__main__":
@@ -24,13 +25,22 @@ if __name__ == "__main__":
 
     print(f"Hiperparámetros del modelo{model.hparams}")
 
+    checkpoint_callback = ModelCheckpoint(
+        monitor="val_loss",
+        mode="min",
+        save_top_k=1,
+        dirpath="checkpoints/",
+        filename="best-model-{epoch:02d}-{val_loss:.2f}"
+    )
+
     trainer = L.Trainer(
         accelerator="gpu",
         # devices=[0],
         precision="16-mixed",
-        max_epochs=10,
+        max_epochs=15,
         log_every_n_steps=10,
-        logger=logger
+        logger=logger,
+        callbacks=[checkpoint_callback]
     )
 
     trainer.fit(model=model, datamodule=data)

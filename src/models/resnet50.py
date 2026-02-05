@@ -4,10 +4,11 @@ from torch import optim, nn, utils, Tensor
 import lightning as L
 from torchvision import models
 import torchmetrics
+from torchmetrics import ConfusionMatrix
 
 class ResNet50(L.LightningModule):
 
-    def __init__(self, n_outputs, lr,):
+    def __init__(self, n_outputs, lr=1e-3):
         super().__init__()
 
         # Hyperparameters
@@ -26,32 +27,49 @@ class ResNet50(L.LightningModule):
         self.loss = nn.CrossEntropyLoss()
         self.training_acc = torchmetrics.Accuracy(num_classes=self.n_outputs, task="multiclass")
         self.valid_acc = torchmetrics.Accuracy(num_classes=self.n_outputs, task="multiclass")
+        self.test_acc = torchmetrics.Accuracy(num_classes=self.n_outputs, task="multiclass")
 
         self.save_hyperparameters()
+
+        self.conf_matrix = ConfusionMatrix(num_classes=self.n_outputs, task="multiclass")
 
 
     def forward(self, x):
         return self.model(x)
     
     def training_step(self, batch, batch_idx):
-        self.train()
         x, y = batch["image"], batch["target"]
         logits = self(x)
         loss = self.loss(logits, y)
         acc = self.training_acc(logits, y)
-        self.log("training loss", loss, on_step=False, on_epoch=True, prog_bar=False)
-        self.log("training acc", acc, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=False)
+        self.log("train_acc", acc, on_step=True, on_epoch=True, prog_bar=True)
         return loss
     
     def validation_step(self, batch, batch_idx):
-        self.eval()
         x, y = batch["image"], batch["target"]
         logits = self(x)
         l = self.loss(logits, y)
         acc = self.valid_acc(logits, y)
-        self.log("valid_loss", l, on_step=False, on_epoch=True, prog_bar=True)
-        self.log("valid acc", acc, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("val_loss", l, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("val_acc", acc, on_step=False, on_epoch=True, prog_bar=True)
     
+    def test_step(self, batch, batch_idx):
+        x, y = batch["image"], batch["target"]
+        logits = self(x)
+        loss = self.loss(logits, y)
+        acc = self.test_acc(logits,y)
+
+        self.log("test_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("test_acc", acc, on_step=False, on_epoch=True, prog_bar=True)
+
+        self.conf_matrix.update(logits, y)
+
+    def on_test_epoch_end(self):
+        print("Matrix de confusión\n")
+        print(self.conf_matrix.compute())
+        self.conf_matrix.reset()
+
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=self.lr)
         return optimizer
