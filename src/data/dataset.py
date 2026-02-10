@@ -9,9 +9,32 @@ class MultiPIEDataset(VisionDataset):
     def __init__(self, root, df, transform=None, target_transform = None):
         super().__init__(root, transform=transform, target_transform=target_transform)
 
+        # print(f"El archivo {root} existe: {os.path.exists(root)}")
+        # print(f"Datagrame: {df}")
+        # print(f"Columnas del df{df.columns}")
+
         # Eliminar las filas que no tienen emoción
         self.df = df.copy().reset_index(drop=True)
-        self.df['temp_label'] = self._generate_labels()
+
+        if self.df.empty:
+            self.df = pd.DataFrame(columns=['rel_path', 'temp_label', 'gender', 'ethnicity', 'age', 'camera_id'])
+            self.labels = []
+            return
+        
+        if 'temp_label' not in self.df.columns:
+            self.df['temp_label'] = self._generate_labels()
+
+        if 'temp_label' in self.df.columns:
+            self.df = self.df[self.df["temp_label"] != -1].reset_index(drop=True)
+        
+        if not self.df.empty:
+            mask = self.df['rel_path'].apply(lambda x: os.path.exists(os.path.join(self.root, x)))
+            self.df = self.df[mask].reset_index(drop=True)
+
+        if 'temp_label' not in self.df.columns:
+                self.df['temp_label'] = self._generate_labels()
+
+
         self.df = self.df[self.df["temp_label"] != -1].reset_index(drop=True)
 
         # Eliminar filas donde la imagen no existe

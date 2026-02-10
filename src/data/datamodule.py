@@ -75,6 +75,7 @@ class MultiPIEDataModule(L.LightningDataModule):
 
             
             val_df = full_df[full_df['subject_id'].isin(val_subs['subject_id'])]
+    
             self.train_ds = MultiPIEDataset(self.data_dir, df=train_df, transform=transform)
             self.val_ds = MultiPIEDataset(self.data_dir, df=val_df, transform=transform)
         
@@ -87,6 +88,8 @@ class MultiPIEDataModule(L.LightningDataModule):
 
         final_dfs = []
         classes = df['temp_label'].unique()
+        # print(f"Temp label antes de las transformaciones {classes}")
+
 
 
         for label in classes:
@@ -99,8 +102,8 @@ class MultiPIEDataModule(L.LightningDataModule):
                 target_ratio = self.bias_factor
             
 
-            available_women = df[(df['temp_label'] == label) & (df['gender'] == 1)]
-            available_men = df[(df['temp_label'] == label) & (df['gender'] == 0)]
+            available_women = df[(df['temp_label'] == label) & (df['gender'] == "Female")]
+            available_men = df[(df['temp_label'] == label) & (df['gender'] == "Male")]
 
             n_women_avail = len(available_women)
             n_men_avail = len(available_men)
@@ -119,17 +122,20 @@ class MultiPIEDataModule(L.LightningDataModule):
 
                 n_req_women = int(limit_N * target_ratio)
                 n_req_men = limit_N - n_req_women
+
+            # print(f"Label {label}: Avail Women: {n_women_avail}, Avail Men: {n_men_avail}")
+            # print(f"Label {label}: Requested Women: {n_req_women}, Requested Men: {n_req_men}")
             
             #Sample data
             if n_req_women > 0:
                 sampled_women = available_women.sample(n=n_req_women, random_state = 42)
             else:
-                sampled_women = pd.DataFrame()
+                sampled_women = pd.DataFrame(columns=df.columns)
             
             if n_req_men > 0:
                 sampled_men = available_men.sample(n=n_req_men, random_state = 42)
             else:
-                sampled_men = pd.DataFrame()
+                sampled_men = pd.DataFrame(columns=df.columns)
             
             final_dfs.append(sampled_women)
             final_dfs.append(sampled_men)

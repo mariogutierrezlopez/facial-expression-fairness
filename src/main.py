@@ -33,15 +33,20 @@ def run_experiment(exp_name, bias_type, bias_factor, target_class=None):
 
     model = ResNet50(n_outputs=N_OUTPUTS, lr=LEARNING_RATE)
 
-    logger = WandbLogger(log_model="all")
+    logger = WandbLogger(
+        name=exp_name,
+        project="MultiPIE-Bias-Analysis",
+        log_model="all"
+    )
 
     print(f"Hiperparámetros del modelo{model.hparams}")
-
+    
+    checkpoint_dir = f"checkpoints/{exp_name}/"
     checkpoint_callback = ModelCheckpoint(
         monitor="val_loss",
         mode="min",
         save_top_k=1,
-        dirpath="checkpoints/",
+        dirpath=checkpoint_dir,
         filename="best-model-{epoch:02d}-{val_loss:.2f}"
     )
 
@@ -54,8 +59,10 @@ def run_experiment(exp_name, bias_type, bias_factor, target_class=None):
         logger=logger,
         callbacks=[checkpoint_callback]
     )
-
+    
     trainer.fit(model=model, datamodule=data)
+
+    trainer.test(model=model, datamodule=data, ckpt_path="best")
 
 if __name__ == "__main__":
 
@@ -64,8 +71,8 @@ if __name__ == "__main__":
 
     # SESGOS REPRESENTACIONALES
     print("Analizando sesgos representacionales")
-
     for f in BIAS_FACTORS:
+        print(f"Probando experimentos con f={f}")
         run_experiment(
             exp_name=f"Repres_bias_f{f}",
             bias_type="representational",
