@@ -28,10 +28,15 @@ class ResNet50(L.LightningModule):
         self.training_acc = torchmetrics.Accuracy(num_classes=self.n_outputs, task="multiclass")
         self.valid_acc = torchmetrics.Accuracy(num_classes=self.n_outputs, task="multiclass")
         self.test_acc = torchmetrics.Accuracy(num_classes=self.n_outputs, task="multiclass")
-
+        
         self.save_hyperparameters()
-
+        
+        #METRICS
+        #Conf matrix
         self.conf_matrix = ConfusionMatrix(num_classes=self.n_outputs, task="multiclass")
+        #Recall metrics
+        self.test_recall_per_class = torchmetrics.Recall(num_classes=self.n_outputs, task="multiclass", average=None)
+        self.test_avg_recall = torchmetrics.Recall(num_classes=self.n_outputs, task="multiclass", average="macro")
 
 
     def forward(self, x):
@@ -60,15 +65,33 @@ class ResNet50(L.LightningModule):
         loss = self.loss(logits, y)
         acc = self.test_acc(logits,y)
 
+        # LOG loss and acc
         self.log("test_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
         self.log("test_acc", acc, on_step=False, on_epoch=True, prog_bar=True)
 
+        # COMPUTE METRICS
+        self.test_recall_per_class.update(logits, y)
+        self.test_avg_recall.update(logits, y)
         self.conf_matrix.update(logits, y)
 
     def on_test_epoch_end(self):
+
+        #OUTPUT CONF MATRIX
         print("Matrix de confusión\n")
         print(self.conf_matrix.compute())
+
+        #OUTPUT RECALL METRICS
+        per_class = self.test_recall_per_class.compute()
+        avg_recall = self.test_avg_recall()
+
+        self.log("test_avg_recall", avg_recall)
+        for i, recall_val in enumerate(per_class):
+            self.log(f"test_recall_class_{i}", recall_val)
+        
+        #RESET METRICS
         self.conf_matrix.reset()
+        self.test_avg_recall.reset()
+        self.test_recall_per_class.reset()
 
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=self.lr)

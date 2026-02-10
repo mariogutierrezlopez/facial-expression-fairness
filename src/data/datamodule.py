@@ -83,8 +83,52 @@ class MultiPIEDataModule(L.LightningDataModule):
             test_df = full_df[full_df['subject_id'].isin(test_subs['subject_id'])]
             self.test_ds = MultiPIEDataset(self.data_dir, df=test_df, transform=transform)
 
-    # Esta funcion calcula el número máximo de elementos que puede haber por clase que satisfaga el ratio de género
+
+    # FUNCION PARA OBTENER DATASET BALANCEADO CON LA CLASE MAS BAJA
     def _apply_experiment_bias(self, df):
+        final_dfs = []
+        classes = df['temp_label'].unique()
+
+        # Encontrar la clase con menos ejemplos
+        possible_limits = []
+        for label in classes:
+            # Determinar el ratio para esta clase:
+            if self.bias_type == "stereotipical":
+                current_f = 0.5
+            else:
+                current_f = self.bias_factor
+        
+            n_women_avail = len(df[(df['temp_label'] == label) & (df['gender'] == "Female")])
+            n_men_avail = len(df[(df['temp_label'] == label) & (df['gender'] == "Male")])
+
+            limit_w = int(n_women_avail/current_f) if current_f > 0 else n_men_avail
+            limit_m = int(n_men_avail / (1 - current_f))
+
+            possible_limits.append(min(limit_w, limit_m))
+
+        global_limit_N = min(possible_limits)
+
+        # Generar datos balanceados
+        for label in classes:
+            if self.bias_type == "stereotipical":
+                current_f = self.bias_factor if label == self.target_class else 0.5
+            else:
+                current_f = self.bias_factor
+            
+            n_req_women = int(global_limit_N * current_f)
+            n_req_men = global_limit_N - n_req_women
+
+            sampled_women = df[(df['temp_label'] == label) &  (df['gender'] == "Female")].sample(n=n_req_women, random_state=42)
+            sampled_men = df[(df['temp_label'] == label) & (df['gender'] == "Male")].sample(n=n_req_men, random_state=42)
+
+            final_dfs.extend([sampled_women, sampled_men])
+
+        return pd.concat(final_dfs).sample(frac=1, random_state=42).reset_index(drop=True)
+    
+
+    # ESTA FUNCION DE MOMENTO NO SE USA
+    # Esta funcion calcula el número máximo de elementos que puede haber por clase que satisfaga el ratio de género
+    def _apply_experiment_bias_unbalanced_expr(self, df):
 
         final_dfs = []
         classes = df['temp_label'].unique()

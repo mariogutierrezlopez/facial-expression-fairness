@@ -4,118 +4,45 @@ TPU available: False, using: 0 TPU cores
 wandb: WARNING The anonymous setting has no effect and will be removed in a future version.
 wandb: [wandb.login()] Loaded credentials for https://api.wandb.ai from /home/mgutierrez/.netrc.
 wandb: Currently logged in as: mariogutierrezlopez (mariogutierrezlopez-upm) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
-wandb: setting up run q81ykkn6
+wandb: setting up run 4xljvncx
 wandb: Tracking run with wandb version 0.24.1
-wandb: Run data is saved locally in wandb/run-20260210_102522-q81ykkn6
+wandb: Run data is saved locally in wandb/run-20260210_113752-4xljvncx
 wandb: Run `wandb offline` to turn off syncing.
-wandb: Syncing run polar-bird-43
-wandb: ⭐️ View project at https://wandb.ai/mariogutierrezlopez-upm/lightning_logs
-wandb: 🚀 View run at https://wandb.ai/mariogutierrezlopez-upm/lightning_logs/runs/q81ykkn6
-/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/callbacks/model_checkpoint.py:881: Checkpoint directory /home/mgutierrez/TFM/checkpoints exists and is not empty.
+wandb: Syncing run Repres_bias_f0.0
+wandb: ⭐️ View project at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis
+wandb: 🚀 View run at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/4xljvncx
 LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
 /home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/utilities/model_summary/model_summary.py:242: Precision 16-mixed is not supported by the model summary.  Estimated model size in MB will not be accurate. Using 32 bits instead.
 Analizando sesgos representacionales
+Probando experimentos con f=0.0
 Hiperparámetros del modelo"lr":        0.002
 "n_outputs": 6
-El archivo /home12TB1/database/recognition/faces/MultiPie/data/ existe: True
-Datagrame:        session_id  subject_id  recording_id  ... ethnicity gender    age
-0       session01         155             2  ...     Asian   Male  30-39
-1       session01         155             2  ...     Asian   Male  20-29
-2       session01         155             2  ...     Asian   Male  20-29
-3       session01         155             2  ...     Asian   Male  20-29
-4       session01         155             2  ...     Asian   Male  20-29
-...           ...         ...           ...  ...       ...    ...    ...
-748115  session04         342             1  ...     Asian   Male  30-39
-748116  session04         342             1  ...     Asian   Male  30-39
-748117  session04         342             1  ...     Asian   Male  30-39
-748118  session04         342             1  ...     Asian   Male  20-29
-748119  session04         342             1  ...     Asian   Male  30-39
-
-[748120 rows x 10 columns]
-Columnas del dfIndex(['session_id', 'subject_id', 'recording_id', 'camera_id', 'filename',
-       'rel_path', 'abs_path', 'ethnicity', 'gender', 'age'],
-      dtype='object')
-Temp label antes de las transformaciones [1 0 3 2 4 5]
-Label 1: Avail Women: 35436, Avail Men: 91450
-Label 1: Requested Women: 0, Requested Men: 91450
-Label 0: Avail Women: 86596, Avail Men: 221834
-Label 0: Requested Women: 0, Requested Men: 221834
-Label 3: Avail Women: 14634, Avail Men: 39743
-Label 3: Requested Women: 0, Requested Men: 39743
-Label 2: Avail Women: 15137, Avail Men: 39595
-Label 2: Requested Women: 0, Requested Men: 39595
-Label 4: Avail Women: 16748, Avail Men: 44155
-Label 4: Requested Women: 0, Requested Men: 44155
-Label 5: Avail Women: 18172, Avail Men: 45492
-Label 5: Requested Women: 0, Requested Men: 45492
-Label: 5, n_req_men: 45492, n_req_women: 0
 Contingency table: representational, f=0.0
-gender        Male
-temp_label        
-0           221834
-1            91450
-2            39595
-3            39743
-4            44155
-5            45492
-El archivo /home12TB1/database/recognition/faces/MultiPie/data/ existe: True
-Datagrame:        session_id subject_id recording_id  ... gender    age temp_label
-0       session04        214            2  ...   Male  20-29          5
-1       session03        222            2  ...   Male  20-29          1
-2       session01        133            1  ...   Male  30-39          0
-3       session03         96            3  ...   Male  30-39          4
-4       session03         30            1  ...   Male  20-29          0
-...           ...        ...          ...  ...    ...    ...        ...
-482264  session04        149            1  ...   Male  20-29          0
-482265  session02        260            2  ...   Male  30-39          2
-482266  session01        197            1  ...   Male  20-29          0
-482267  session04         70            1  ...   Male  30-39          0
-482268  session04        308            3  ...   Male  20-29          0
-
-[482269 rows x 11 columns]
-Columnas del dfIndex(['session_id', 'subject_id', 'recording_id', 'camera_id', 'filename',
-       'rel_path', 'abs_path', 'ethnicity', 'gender', 'age', 'temp_label'],
-      dtype='object')
-El archivo /home12TB1/database/recognition/faces/MultiPie/data/ existe: True
-Datagrame:        session_id  subject_id  recording_id  ... gender    age temp_label
-600     session01         150             2  ...   Male  40-49          1
-601     session01         150             2  ...   Male  40-49          1
-602     session01         150             2  ...   Male  40-49          1
-603     session01         150             2  ...   Male  40-49          1
-604     session01         150             2  ...   Male  30-39          1
-...           ...         ...           ...  ...    ...    ...        ...
-748115  session04         342             1  ...   Male  30-39          0
-748116  session04         342             1  ...   Male  30-39          0
-748117  session04         342             1  ...   Male  30-39          0
-748118  session04         342             1  ...   Male  20-29          0
-748119  session04         342             1  ...   Male  30-39          0
-
-[194009 rows x 11 columns]
-Columnas del dfIndex(['session_id', 'subject_id', 'recording_id', 'camera_id', 'filename',
-       'rel_path', 'abs_path', 'ethnicity', 'gender', 'age', 'temp_label'],
-      dtype='object')
-┏━━━┳━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
-┃   ┃ Name         ┃ Type                      ┃ Params ┃ Mode  ┃ FLOPs ┃
-┡━━━╇━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
-│ 0 │ model        │ ResNet                    │ 23.5 M │ train │     0 │
-│ 1 │ loss         │ CrossEntropyLoss          │      0 │ train │     0 │
-│ 2 │ training_acc │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 3 │ valid_acc    │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 4 │ test_acc     │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 5 │ conf_matrix  │ MulticlassConfusionMatrix │      0 │ train │     0 │
-└───┴──────────────┴───────────────────────────┴────────┴───────┴───────┘
+gender       Male
+temp_label       
+0           39595
+1           39595
+2           39595
+3           39595
+4           39595
+5           39595
+┏━━━┳━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name                  ┃ Type                    ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ model                 │ ResNet                  │ 23.5 M │ train │     0 │
+│ 1 │ loss                  │ CrossEntropyLoss        │      0 │ train │     0 │
+│ 2 │ training_acc          │ MulticlassAccuracy      │      0 │ train │     0 │
+│ 3 │ valid_acc             │ MulticlassAccuracy      │      0 │ train │     0 │
+│ 4 │ test_acc              │ MulticlassAccuracy      │      0 │ train │     0 │
+│ 5 │ conf_matrix           │ MulticlassConfusionMat… │      0 │ train │     0 │
+│ 6 │ test_recall_per_class │ MulticlassRecall        │      0 │ train │     0 │
+│ 7 │ test_avg_recall       │ MulticlassRecall        │      0 │ train │     0 │
+└───┴───────────────────────┴─────────────────────────┴────────┴───────┴───────┘
 Trainable params: 23.5 M                                                        
 Non-trainable params: 0                                                         
 Total params: 23.5 M                                                            
 Total estimated model params size (MB): 94                                      
-Modules in train mode: 156                                                      
+Modules in train mode: 158                                                      
 Modules in eval mode: 0                                                         
 Total FLOPs: 0                                                                  
 /home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/utilities/data.py:79: Trying to infer the `batch_size` from an ambiguous collection. The batch size we found is 256. To avoid any miscalculations, use `self.log(..., batch_size=batch_size)`.
-
-Detected KeyboardInterrupt, attempting graceful shutdown ...
-Epoch 0/19 ━╸               183/1884 0:05:06 •        0.51it/s v_num: kkn6      
-                                     0:55:50                   train_acc_step:  
-                                                               0.492            
-[1;34mwandb[0m: 
-[1;34mwandb[0m: 🚀 View run [33mpolar-bird-43[0m at: [34mhttps://wandb.ai/mariogutierrezlopez-upm/lightning_logs/runs/q81ykkn6[0m
