@@ -1,3 +1,6 @@
+#   dataset.py
+#   Mario Gutiérrez López
+
 import torch
 from torchvision.datasets import VisionDataset
 import pandas as pd

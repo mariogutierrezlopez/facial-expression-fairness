@@ -1,6 +1,7 @@
 # 1. Ignore everything in the root
 /*
 
+
 # 2. Allow all files in the root directory (like README.md, main.py, etc.)
 !/*.*
 
@@ -9,3 +10,7 @@
 
 # 4. Allow the src folder and everything inside it
 !/src/
+
+# Don't track log files to keep repository clean
+logs.log
+*.log

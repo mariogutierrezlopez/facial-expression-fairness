@@ -1,3 +1,6 @@
+#   datamodule.py
+#   Mario Gutiérrez López
+
 import lightning as L
 from lightning.pytorch.utilities.types import TRAIN_DATALOADERS
 from torchvision.datasets import MNIST
@@ -101,8 +104,20 @@ class MultiPIEDataModule(L.LightningDataModule):
             n_women_avail = len(df[(df['temp_label'] == label) & (df['gender'] == "Female")])
             n_men_avail = len(df[(df['temp_label'] == label) & (df['gender'] == "Male")])
 
-            limit_w = int(n_women_avail/current_f) if current_f > 0 else n_men_avail
-            limit_m = int(n_men_avail / (1 - current_f))
+
+            # Correción en la lógica para evitar división por 0 en f = 1.0
+            # limit_w = int(n_women_avail/current_f) if current_f > 0 else n_men_avail
+            # limit_m = int(n_men_avail / (1 - current_f))
+            if current_f > 0:
+                limit_w = int(n_women_avail / current_f)
+            else:
+                limit_w = float('inf')
+            
+            if current_f < 1:
+                limit_m = int(n_men_avail / (1 - current_f))
+            else:
+                limit_m = float('inf')
+
 
             possible_limits.append(min(limit_w, limit_m))
 

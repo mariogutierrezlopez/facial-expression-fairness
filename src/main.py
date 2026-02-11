@@ -1,3 +1,6 @@
+#   main.py
+#   Mario Gutiérrez López
+
 import lightning as L
 import torch
 from src.models.resnet50 import ResNet50
@@ -5,27 +8,30 @@ from src.data.datamodule import MultiPIEDataModule
 
 from lightning.pytorch.loggers import WandbLogger
 from lightning.pytorch.callbacks import ModelCheckpoint
+import wandb
 
 # CONFIGURACION
 DATA_DIR = "/home12TB1/database/recognition/faces/MultiPie/data/"
 CSV_PATH = "/home12TB1/database/recognition/faces/MultiPie/demographic_info_cropped.csv"
 LEARNING_RATE = 2e-3
 BATCH_SIZE = 256
-NUM_WORKERS = 4
+NUM_WORKERS = 12
 MAX_EPOCHS = 20
 N_OUTPUTS = 6
-
 #Factores de sesgo f
 BIAS_FACTORS = [0.0, 0.25, 0.5, 0.75, 1.0]
 
 
 def run_experiment(exp_name, bias_type, bias_factor, target_class=None):
 
+    if wandb.run is not None:
+        wandb.finish()
+
     data = MultiPIEDataModule(
         data_dir=DATA_DIR,
         csv_path=CSV_PATH,
         batch_size=BATCH_SIZE,
-        num_workers=12,
+        num_workers=NUM_WORKERS,
         bias_type=bias_type,
         bias_factor=bias_factor,
         target_class=target_class
@@ -36,7 +42,7 @@ def run_experiment(exp_name, bias_type, bias_factor, target_class=None):
     logger = WandbLogger(
         name=exp_name,
         project="MultiPIE-Bias-Analysis",
-        log_model="all"
+        log_model="all",
     )
 
     print(f"Hiperparámetros del modelo{model.hparams}")
@@ -64,6 +70,8 @@ def run_experiment(exp_name, bias_type, bias_factor, target_class=None):
 
     trainer.test(model=model, datamodule=data, ckpt_path="best")
 
+    wandb.finish()
+
 if __name__ == "__main__":
 
     torch.set_float32_matmul_precision('high')
@@ -78,16 +86,17 @@ if __name__ == "__main__":
             bias_type="representational",
             bias_factor=f
         )
+        wandb.finish()
 
-    # SESGOS ESTEREOTÍPICOS
-    # print("Analizando sesgos estereotípicos")
+    #SESGOS ESTEREOTÍPICOS
+    print("Analizando sesgos estereotípicos")
 
-    # TARGET_CLASS_ID = 2
+    TARGET_CLASS_ID = 2
 
-    # for f in BIAS_FACTORS:
-    #     run_experiment(
-    #         exp_name=f"Stereotipical_bias_f{f}",
-    #         bias_type="stereotipical",
-    #         bias_factor=f,
-    #         target_class=TARGET_CLASS_ID
-    #     )
+    for f in BIAS_FACTORS:
+        run_experiment(
+            exp_name=f"Stereotipical_bias_f{f}",
+            bias_type="stereotipical",
+            bias_factor=f,
+            target_class=TARGET_CLASS_ID
+        )

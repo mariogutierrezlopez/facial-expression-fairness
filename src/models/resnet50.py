@@ -1,3 +1,6 @@
+#   resnet50.py
+#   Mario Gutiérrez López
+
 from typing import Any, Callable
 from lightning.pytorch.core.optimizer import LightningOptimizer
 from torch import optim, nn, utils, Tensor
@@ -75,6 +78,9 @@ class ResNet50(L.LightningModule):
         self.conf_matrix.update(logits, y)
 
     def on_test_epoch_end(self):
+        
+        self.log("test_acc_epoch", self.test_acc.compute())
+
 
         #OUTPUT CONF MATRIX
         print("Matrix de confusión\n")
@@ -82,7 +88,7 @@ class ResNet50(L.LightningModule):
 
         #OUTPUT RECALL METRICS
         per_class = self.test_recall_per_class.compute()
-        avg_recall = self.test_avg_recall()
+        avg_recall = self.test_avg_recall.compute()
 
         self.log("test_avg_recall", avg_recall)
         for i, recall_val in enumerate(per_class):

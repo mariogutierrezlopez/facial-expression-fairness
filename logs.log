@@ -4,13 +4,13 @@ TPU available: False, using: 0 TPU cores
 wandb: WARNING The anonymous setting has no effect and will be removed in a future version.
 wandb: [wandb.login()] Loaded credentials for https://api.wandb.ai from /home/mgutierrez/.netrc.
 wandb: Currently logged in as: mariogutierrezlopez (mariogutierrezlopez-upm) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
-wandb: setting up run 4xljvncx
+wandb: setting up run yfc7xekf
 wandb: Tracking run with wandb version 0.24.1
-wandb: Run data is saved locally in wandb/run-20260210_113752-4xljvncx
+wandb: Run data is saved locally in wandb/run-20260211_112235-yfc7xekf
 wandb: Run `wandb offline` to turn off syncing.
 wandb: Syncing run Repres_bias_f0.0
 wandb: ⭐️ View project at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis
-wandb: 🚀 View run at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/4xljvncx
+wandb: 🚀 View run at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/yfc7xekf
 LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
 /home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/utilities/model_summary/model_summary.py:242: Precision 16-mixed is not supported by the model summary.  Estimated model size in MB will not be accurate. Using 32 bits instead.
 Analizando sesgos representacionales
@@ -46,3 +46,5 @@ Modules in train mode: 158
 Modules in eval mode: 0                                                         
 Total FLOPs: 0                                                                  
 /home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/utilities/data.py:79: Trying to infer the `batch_size` from an ambiguous collection. The batch size we found is 256. To avoid any miscalculations, use `self.log(..., batch_size=batch_size)`.
+/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/utilities/data.py:79: Trying to infer the `batch_size` from an ambiguous collection. The batch size we found is 2. To avoid any miscalculations, use `self.log(..., batch_size=batch_size)`.
+/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/utilities/data.py:79: Trying to infer the `batch_size` from an ambiguous collection. The batch size we found is 217. To avoid any miscalculations, use `self.log(..., batch_size=batch_size)`.
