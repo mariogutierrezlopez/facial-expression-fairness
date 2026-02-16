@@ -21,7 +21,8 @@ class MultiPIEDataModule(L.LightningDataModule):
                  num_workers: int,
                  bias_type: str,
                  bias_factor: float = 0.5,
-                 target_class: int = None
+                 n_limit:int = 0,
+                 target_class: int | None = None,
     ):
         super().__init__()
         self.data_dir = data_dir
@@ -32,6 +33,8 @@ class MultiPIEDataModule(L.LightningDataModule):
         self.bias_type = bias_type
         self.bias_factor = bias_factor
         self.target_class = target_class
+
+        self.n_limit = n_limit
 
     # Función obligatoria de DataModule, settea la distribución de datos
     def setup(self, stage):
@@ -92,48 +95,22 @@ class MultiPIEDataModule(L.LightningDataModule):
         final_dfs = []
         classes = df['temp_label'].unique()
 
-        # Encontrar la clase con menos ejemplos
-        possible_limits = []
+
+        global_limit_N = self.n_limit
+
         for label in classes:
-            # Determinar el ratio para esta clase:
-            if self.bias_type == "stereotipical":
-                current_f = 0.5
-            else:
-                current_f = self.bias_factor
-        
-            n_women_avail = len(df[(df['temp_label'] == label) & (df['gender'] == "Female")])
-            n_men_avail = len(df[(df['temp_label'] == label) & (df['gender'] == "Male")])
-
-
-            # Correción en la lógica para evitar división por 0 en f = 1.0
-            # limit_w = int(n_women_avail/current_f) if current_f > 0 else n_men_avail
-            # limit_m = int(n_men_avail / (1 - current_f))
-            if current_f > 0:
-                limit_w = int(n_women_avail / current_f)
-            else:
-                limit_w = float('inf')
-            
-            if current_f < 1:
-                limit_m = int(n_men_avail / (1 - current_f))
-            else:
-                limit_m = float('inf')
-
-
-            possible_limits.append(min(limit_w, limit_m))
-
-        global_limit_N = min(possible_limits)
-
-        # Generar datos balanceados
-        for label in classes:
+            # Lógica para determinar el f de esta clase específica
             if self.bias_type == "stereotipical":
                 current_f = self.bias_factor if label == self.target_class else 0.5
             else:
                 current_f = self.bias_factor
             
+            # Cálculo de muestras por género basado en el N fijo
             n_req_women = int(global_limit_N * current_f)
             n_req_men = global_limit_N - n_req_women
 
-            sampled_women = df[(df['temp_label'] == label) &  (df['gender'] == "Female")].sample(n=n_req_women, random_state=42)
+            # Muestreo aleatorio
+            sampled_women = df[(df['temp_label'] == label) & (df['gender'] == "Female")].sample(n=n_req_women, random_state=42)
             sampled_men = df[(df['temp_label'] == label) & (df['gender'] == "Male")].sample(n=n_req_men, random_state=42)
 
             final_dfs.extend([sampled_women, sampled_men])

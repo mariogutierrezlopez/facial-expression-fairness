@@ -5,6 +5,7 @@ import lightning as L
 import torch
 from src.models.resnet50 import ResNet50
 from src.data.datamodule import MultiPIEDataModule
+from src.utils.utils import calc_nlimits
 
 from lightning.pytorch.loggers import WandbLogger
 from lightning.pytorch.callbacks import ModelCheckpoint
@@ -22,7 +23,7 @@ N_OUTPUTS = 6
 BIAS_FACTORS = [0.0, 0.25, 0.5, 0.75, 1.0]
 
 
-def run_experiment(exp_name, bias_type, bias_factor, target_class=None):
+def run_experiment(exp_name, bias_type, bias_factor, n_limit, target_class=None):
 
     if wandb.run is not None:
         wandb.finish()
@@ -34,6 +35,7 @@ def run_experiment(exp_name, bias_type, bias_factor, target_class=None):
         num_workers=NUM_WORKERS,
         bias_type=bias_type,
         bias_factor=bias_factor,
+        n_limit=n_limit,
         target_class=target_class
     )
 
@@ -76,7 +78,9 @@ if __name__ == "__main__":
 
     torch.set_float32_matmul_precision('high')
 
-
+    n_limit_repres, n_limit_stereo = calc_nlimits(CSV_PATH, BIAS_FACTORS)
+    print(f"Sesgo representacional: Ejemplos por clase: {n_limit_repres}")
+    print(f"Sesgo estereotipico: Ejemplos por clase: {n_limit_stereo}")
     # SESGOS REPRESENTACIONALES
     print("Analizando sesgos representacionales")
     for f in BIAS_FACTORS:
@@ -84,7 +88,8 @@ if __name__ == "__main__":
         run_experiment(
             exp_name=f"Repres_bias_f{f}",
             bias_type="representational",
-            bias_factor=f
+            bias_factor=f,
+            n_limit=n_limit_repres
         )
         wandb.finish()
 
@@ -98,5 +103,7 @@ if __name__ == "__main__":
             exp_name=f"Stereotipical_bias_f{f}",
             bias_type="stereotipical",
             bias_factor=f,
-            target_class=TARGET_CLASS_ID
+            target_class=TARGET_CLASS_ID,
+            n_limit=n_limit_stereo
         )
+        wandb.finish()
