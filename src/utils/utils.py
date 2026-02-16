@@ -27,9 +27,24 @@ def calc_nlimits(csv_path, bias_arr:list):
         if current_f_limit < min_repres:
             min_repres = current_f_limit
 
-        # EVALUAR SESGO ESTEREOTÍPICO
-    limit_at_05 = _get_limit_for_factor(df, classes, 0.5)
-    min_stereo = min(min_repres, limit_at_05)
+    # EVALUAR SESGO ESTEREOTÍPICO
+    all_stereo_scenarios = []
+    for f in bias_arr:
+        for target_class in classes:
+            scenario_limits = []
+            for label in classes:
+                current_f = f if label == target_class else 0.5
+
+                n_w = len(df[(df['temp_label'] == label) & (df['gender'] == 'Female')])
+                n_m = len(df[(df['temp_label'] == label) & (df['gender'] == 'Male')])
+                
+                limit_w = int(n_w / current_f) if current_f > 0 else float('inf')
+                limit_m = int(n_m / (1 - current_f)) if current_f < 1 else float('inf')
+                scenario_limits.append(min(limit_w, limit_m))
+
+            all_stereo_scenarios.append(min(scenario_limits))
+    min_stereo = min(all_stereo_scenarios)
+
     return int(min_repres), int(min_stereo)
 
 def _get_limit_for_factor(df, classes, f):
