@@ -79,8 +79,12 @@ if __name__ == "__main__":
     torch.set_float32_matmul_precision('high')
 
     n_limit_repres, n_limit_stereo = calc_nlimits(CSV_PATH, BIAS_FACTORS)
-    print(f"Sesgo representacional: Ejemplos por clase: {n_limit_repres}")
-    print(f"Sesgo estereotipico: Ejemplos por clase: {n_limit_stereo}")
+    print(f"Limite representacional: {n_limit_repres}")
+    print(f"Límite estereotípico: {n_limit_stereo}")
+
+    global_n_limit = min(n_limit_repres, n_limit_stereo)
+    print(f"N_limit global para ambos: {global_n_limit}")
+    
     # SESGOS REPRESENTACIONALES
     print("Analizando sesgos representacionales")
     for f in BIAS_FACTORS:

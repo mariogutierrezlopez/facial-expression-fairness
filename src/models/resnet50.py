@@ -8,6 +8,7 @@ import lightning as L
 from torchvision import models
 import torchmetrics
 from torchmetrics import ConfusionMatrix
+import torch
 
 class ResNet50(L.LightningModule):
 
@@ -41,6 +42,9 @@ class ResNet50(L.LightningModule):
         self.test_recall_per_class = torchmetrics.Recall(num_classes=self.n_outputs, task="multiclass", average=None)
         self.test_avg_recall = torchmetrics.Recall(num_classes=self.n_outputs, task="multiclass", average="macro")
 
+        # Demographic evaluation
+        self.test_step_outputs = []
+
 
     def forward(self, x):
         return self.model(x)
@@ -64,9 +68,19 @@ class ResNet50(L.LightningModule):
     
     def test_step(self, batch, batch_idx):
         x, y = batch["image"], batch["target"]
+        genders = batch["meta"]["gender"]
+
         logits = self(x)
         loss = self.loss(logits, y)
         acc = self.test_acc(logits,y)
+
+        preds = torch.argmax(logits, dim=1)
+
+        self.test_step_outputs.append({
+            "preds": preds.detach.cpu(),
+            "targets": y.detach().cpu(),
+            "genders": genders
+        })
 
         # LOG loss and acc
         self.log("test_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
@@ -93,6 +107,39 @@ class ResNet50(L.LightningModule):
         self.log("test_avg_recall", avg_recall)
         for i, recall_val in enumerate(per_class):
             self.log(f"test_recall_class_{i}", recall_val)
+
+        # DEMOGRAPHIC RECALL CALCULATION
+        if len(self.test_step_outputs) > 0:
+            # Flatten lists
+            all_preds = torch.cat([x["preds"] for x in self.test_step_outputs])
+            all_targets = torch.cat([x["targets"] for x in self.test_step_outputs])
+            all_genders = [g for x in self.test_step_outputs for g in x["genders"]]
+
+            for c in range(self.n_outputs):
+                for gender_label in ["Male", "Female"]:
+                    # Create boolean mask for this specific class and gender
+                    mask = torch.tensor([
+                        (all_targets[i].item() == c) and (all_genders[i] == gender_label) 
+                        for i in range(len(all_targets))
+                    ])
+
+                    # Evitar division por cero
+                    if not mask.any():
+                        continue
+
+                    # Filter using the mask
+                    subset_preds = all_preds[mask]
+                    subset_targets = all_targets[mask]
+
+                    # Recall = True Positives / Total Actual Positives
+                    correct = (subset_preds == subset_targets).sum().item()
+                    total = len(subset_targets)
+                    recall = correct / total
+
+                    # Log to WandB!
+                    self.log(f"test_recall_class_{c}_{gender_label.upper()}", recall)
+
+            self.test_step_outputs.clear()
         
         #RESET METRICS
         self.conf_matrix.reset()

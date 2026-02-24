@@ -2,6 +2,7 @@
 # Mario Gutiérrez López
 
 import pandas as pd
+from sklearn.model_selection import train_test_split
 
 def calc_nlimits(csv_path, bias_arr:list):
     """
@@ -16,6 +17,18 @@ def calc_nlimits(csv_path, bias_arr:list):
 
     df = pd.read_csv(csv_path)
     df = generate_labels(df)
+
+    # Calc n_limit for 70% train split
+    subjects_df = df[['subject_id', 'gender']].drop_duplicates()
+    train_subs, _ = train_test_split(
+        subjects_df,
+        test_size=0.3,
+        stratify=subjects_df['gender'],
+        random_state=42
+    )
+
+    df = df[df['subject_id'].isin(train_subs['subject_id'])]
+    
     classes = [c for c in df['temp_label'].unique() if c != -1]
 
     min_repres = float('inf')

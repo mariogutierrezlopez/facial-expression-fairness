@@ -74,21 +74,21 @@ class MultiPIEDataModule(L.LightningDataModule):
         if stage == "fit":
 
             raw_train_df = full_df[full_df['subject_id'].isin(train_subs['subject_id'])]
-
             train_df = self._apply_experiment_bias(raw_train_df)
+            self._print_contingency_table(train_df, filename=f"dataset_logs_fase2/train_dist_{self.bias_type}_f{self.bias_factor}.csv")
 
-            self._print_contingency_table(train_df)
-
-            
-            val_df = full_df[full_df['subject_id'].isin(val_subs['subject_id'])]
+            raw_val_df = full_df[full_df['subject_id'].isin(val_subs['subject_id'])]
+            val_df = self._apply_balanced_evaluation(raw_val_df)
     
             self.train_ds = MultiPIEDataset(self.data_dir, df=train_df, transform=transform)
             self.val_ds = MultiPIEDataset(self.data_dir, df=val_df, transform=transform)
         
         if stage == "test":
-            test_df = full_df[full_df['subject_id'].isin(test_subs['subject_id'])]
-            self.test_ds = MultiPIEDataset(self.data_dir, df=test_df, transform=transform)
 
+            raw_test_df = full_df[full_df['subject_id'].isin(test_subs['subject_id'])]
+            test_df = self._apply_balanced_evaluation(raw_test_df)
+            self._print_contingency_table(test_df, filename=f"dataset_logs_fase2/test_dist_{self.bias_type}_f{self.bias_factor}.csv")
+            self.test_ds = MultiPIEDataset(self.data_dir, df=test_df, transform=transform)
 
     # FUNCION PARA OBTENER DATASET BALANCEADO CON LA CLASE MAS BAJA
     def _apply_experiment_bias(self, df):
@@ -109,15 +109,42 @@ class MultiPIEDataModule(L.LightningDataModule):
             n_req_women = int(global_limit_N * current_f)
             n_req_men = global_limit_N - n_req_women
 
-            # Muestreo aleatorio
-            sampled_women = df[(df['temp_label'] == label) & (df['gender'] == "Female")].sample(n=n_req_women, random_state=42)
-            sampled_men = df[(df['temp_label'] == label) & (df['gender'] == "Male")].sample(n=n_req_men, random_state=42)
+            available_women = df[(df['temp_label'] == label) & (df['gender'] == "Female")]
+            available_men = df[(df['temp_label'] == label) & (df['gender'] == "Male")]
 
+            n_women_to_sample = min(n_req_women, len(available_women))
+            n_men_to_sample = min(n_req_men, len(available_men))
+
+            # Muestreo aleatorio
+            sampled_women = available_women.sample(n=n_women_to_sample, random_state=42)
+            sampled_men = available_men.sample(n=n_men_to_sample, random_state=42)
+            
             final_dfs.extend([sampled_women, sampled_men])
 
         return pd.concat(final_dfs).sample(frac=1, random_state=42).reset_index(drop=True)
     
+    def _apply_balanced_evaluation(self, df):
+        """
+        Fuerza a que los conjuntos de validación y test sean exactamente
+        50/50 (hombre/mujer) oara cada expresión        
+        :param df: Dataframe
+        """
+        final_dfs = []
+        classes = df['temp_label'].unique()
 
+        for label in classes:
+            available_women = df[(df['temp_label'] == label) & (df['gender'] == 'Female')]
+            available_men = df[(df['temp_label'] == label) & (df['gender'] == 'Male')]
+
+            # n_limit de la clase en test/val
+            n_limit = min(len(available_women), len(available_men))
+
+            if n_limit > 0:
+                sampled_women = available_women.sample(n=n_limit, random_state=42)
+                sampled_men = available_men.sample(n=n_limit, random_state=42)
+                final_dfs.extend([sampled_women, sampled_men])
+
+        return pd.concat(final_dfs).sample(frac=1, random_state=42).reset_index(drop=True)
     # ESTA FUNCION DE MOMENTO NO SE USA
     # Esta funcion calcula el número máximo de elementos que puede haber por clase que satisfaga el ratio de género
     def _apply_experiment_bias_unbalanced_expr(self, df):
@@ -179,10 +206,19 @@ class MultiPIEDataModule(L.LightningDataModule):
         return pd.concat(final_dfs).sample(frac=1, random_state=42).reset_index(drop=True)
     
     # Print para ver los parámetros del experimento y la tabla con los géneros y labels
-    def _print_contingency_table(self, df):
+    def _print_contingency_table(self, df, filename=""):
         print(f"Contingency table: {self.bias_type}, f={self.bias_factor}")
         ct = pd.crosstab(df['temp_label'], df['gender'])
         print(ct)
+
+        # Guardar tabla en un csv
+        log_dir = "dataset_logs_fase2"
+        os.makedirs(log_dir, exist_ok=True)
+
+        if filename == "":
+            filename = f"{log_dir}/train_dist_{self.bias_type}_f{self.bias_factor}.csv"
+
+        ct.to_csv(filename)
     
         
     # Funciones del DataModule
