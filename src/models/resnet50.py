@@ -77,7 +77,7 @@ class ResNet50(L.LightningModule):
         preds = torch.argmax(logits, dim=1)
 
         self.test_step_outputs.append({
-            "preds": preds.detach.cpu(),
+            "preds": preds.detach().cpu(),
             "targets": y.detach().cpu(),
             "genders": genders
         })

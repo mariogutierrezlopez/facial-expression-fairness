@@ -1,63 +1,23 @@
 Using 16bit Automatic Mixed Precision (AMP)
+💡 Tip: For seamless cloud uploads and versioning, try installing [litmodels](https://pypi.org/project/litmodels/) to enable LitModelCheckpoint, which syncs automatically with the Lightning model registry.
 GPU available: True (cuda), used: True
 TPU available: False, using: 0 TPU cores
+You are using a CUDA device ('NVIDIA RTX 4500 Ada Generation') that has Tensor Cores. To properly utilize them, you should set `torch.set_float32_matmul_precision('medium' | 'high')` which will trade-off precision for performance. For more details, read https://pytorch.org/docs/stable/generated/torch.set_float32_matmul_precision.html#torch.set_float32_matmul_precision
 wandb: WARNING The anonymous setting has no effect and will be removed in a future version.
 wandb: [wandb.login()] Loaded credentials for https://api.wandb.ai from /home/mgutierrez/.netrc.
 wandb: Currently logged in as: mariogutierrezlopez (mariogutierrezlopez-upm) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
-wandb: setting up run vvmwzazs
+wandb: setting up run 557wa3lf
 wandb: Tracking run with wandb version 0.24.1
-wandb: Run data is saved locally in wandb/run-20260217_124518-vvmwzazs
+wandb: Run data is saved locally in wandb/run-20260224_121304-557wa3lf
 wandb: Run `wandb offline` to turn off syncing.
 wandb: Syncing run Repres_bias_f0.0
 wandb: ⭐️ View project at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis
-wandb: 🚀 View run at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/vvmwzazs
-/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/callbacks/model_checkpoint.py:881: Checkpoint directory /home/mgutierrez/TFM/checkpoints/Repres_bias_f0.0 exists and is not empty.
-LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/utilities/model_summary/model_summary.py:242: Precision 16-mixed is not supported by the model summary.  Estimated model size in MB will not be accurate. Using 32 bits instead.
-Limite representacional: 14634
-Límite estereotípico: 14634
-N_limit global para ambos: 14634
-Analizando sesgos representacionales
-Probando experimentos con f=0.0
-Hiperparámetros del modelo"lr":        0.002
-"n_outputs": 6
-Contingency table: representational, f=0.0
-gender       Male
-temp_label       
-0           14634
-1           14634
-2           14634
-3           14634
-4           14634
-5           14634
-┏━━━┳━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
-┃   ┃ Name                  ┃ Type                      ┃ Params ┃ Mode  ┃ FLOPs ┃
-┡━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
-│ 0 │ model                 │ ResNet                    │ 23.5 M │ train │     0 │
-│ 1 │ loss                  │ CrossEntropyLoss          │      0 │ train │     0 │
-│ 2 │ training_acc          │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 3 │ valid_acc             │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 4 │ test_acc              │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 5 │ conf_matrix           │ MulticlassConfusionMatrix │      0 │ train │     0 │
-│ 6 │ test_recall_per_class │ MulticlassRecall          │      0 │ train │     0 │
-│ 7 │ test_avg_recall       │ MulticlassRecall          │      0 │ train │     0 │
-└───┴───────────────────────┴───────────────────────────┴────────┴───────┴───────┘
-Trainable params: 23.5 M                                                                                                                                                                                                                                
-Non-trainable params: 0                                                                                                                                                                                                                                 
-Total params: 23.5 M                                                                                                                                                                                                                                    
-Total estimated model params size (MB): 94                                                                                                                                                                                                              
-Modules in train mode: 158                                                                                                                                                                                                                              
-Modules in eval mode: 0                                                                                                                                                                                                                                 
-Total FLOPs: 0                                                                                                                                                                                                                                          
-/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/utilities/data.py:79: Trying to infer the `batch_size` from an ambiguous collection. The batch size we found is 256. To avoid any miscalculations, use `self.log(..., batch_size=batch_size)`.
-/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/utilities/data.py:79: Trying to infer the `batch_size` from an ambiguous collection. The batch size we found is 252. To avoid any miscalculations, use `self.log(..., batch_size=batch_size)`.
-/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/utilities/data.py:79: Trying to infer the `batch_size` from an ambiguous collection. The batch size we found is 62. To avoid any miscalculations, use `self.log(..., batch_size=batch_size)`.
-`Trainer.fit` stopped: `max_epochs=20` reached.
-Epoch 19/19 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 343/343 0:02:42 • 0:00:00 2.20it/s v_num: zazs train_acc_step: 0.980 val_loss: 1.186 val_acc: 0.792 train_acc_epoch: 0.984
-Restoring states from the checkpoint path at /home/mgutierrez/TFM/checkpoints/Repres_bias_f0.0/best-model-epoch=08-val_loss=0.78.ckpt
+wandb: 🚀 View run at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/557wa3lf
+Restoring states from the checkpoint path at checkpoints/Repres_bias_f0.0/best-model-epoch=08-val_loss=0.78.ckpt
 /home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/fabric/utilities/cloud_io.py:73: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/trainer/call.py:283: Be aware that when using `ckpt_path`, callbacks used to create the checkpoint need to be provided during `Trainer` instantiation. Please add the following callbacks: ["ModelCheckpoint{'monitor': 'val_loss', 'mode': 'min', 'every_n_train_steps': 0, 'every_n_epochs': 1, 'train_time_interval': None}"].
 LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-Loaded model weights from the checkpoint at /home/mgutierrez/TFM/checkpoints/Repres_bias_f0.0/best-model-epoch=08-val_loss=0.78.ckpt
+Loaded model weights from the checkpoint at checkpoints/Repres_bias_f0.0/best-model-epoch=08-val_loss=0.78.ckpt
 Contingency table: representational, f=0.0
 gender      Female   Male
 temp_label               
@@ -67,6 +27,7 @@ temp_label
 3             4520   4520
 4             5053   5053
 5             5696   5696
+/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/utilities/data.py:79: Trying to infer the `batch_size` from an ambiguous collection. The batch size we found is 256. To avoid any miscalculations, use `self.log(..., batch_size=batch_size)`.
 /home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/utilities/data.py:79: Trying to infer the `batch_size` from an ambiguous collection. The batch size we found is 2. To avoid any miscalculations, use `self.log(..., batch_size=batch_size)`.
 Matrix de confusión
 
@@ -76,105 +37,83 @@ tensor([[45628,  2271,   212,  1864,   783,  3220],
         [  629,   449,     4,  7080,   707,   171],
         [  579,   830,     3,   901,  7724,    69],
         [ 4965,   232,    36,   372,   156,  5631]], device='cuda:0')
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃        Test metric        ┃       DataLoader 0        ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│         test_acc          │    0.8256359696388245     │
-│      test_acc_epoch       │    0.8256359696388245     │
-│      test_avg_recall      │    0.7963194847106934     │
-│         test_loss         │    0.6625928282737732     │
-│    test_recall_class_0    │    0.8453073501586914     │
-│    test_recall_class_1    │    0.9411818981170654     │
-│    test_recall_class_2    │    0.9496492147445679     │
-│    test_recall_class_3    │    0.7831858396530151     │
-│    test_recall_class_4    │    0.7642984390258789     │
-│    test_recall_class_5    │    0.49429425597190857    │
-└───────────────────────────┴───────────────────────────┘
-Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 454/454 0:01:20 • 0:00:00 5.64it/s  
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric         ┃        DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│          test_acc          │     0.8256359696388245     │
+│       test_acc_epoch       │     0.8256359696388245     │
+│      test_avg_recall       │     0.7963194847106934     │
+│         test_loss          │     0.6625928282737732     │
+│    test_recall_class_0     │     0.8453073501586914     │
+│ test_recall_class_0_FEMALE │     0.8161473274230957     │
+│  test_recall_class_0_MALE  │     0.8744673728942871     │
+│    test_recall_class_1     │     0.9411818981170654     │
+│ test_recall_class_1_FEMALE │     0.9396195411682129     │
+│  test_recall_class_1_MALE  │     0.942744255065918      │
+│    test_recall_class_2     │     0.9496492147445679     │
+│ test_recall_class_2_FEMALE │     0.9339661598205566     │
+│  test_recall_class_2_MALE  │     0.9653322100639343     │
+│    test_recall_class_3     │     0.7831858396530151     │
+│ test_recall_class_3_FEMALE │     0.6588495373725891     │
+│  test_recall_class_3_MALE  │     0.9075221419334412     │
+│    test_recall_class_4     │     0.7642984390258789     │
+│ test_recall_class_4_FEMALE │     0.6449633836746216     │
+│  test_recall_class_4_MALE  │     0.8836334943771362     │
+│    test_recall_class_5     │    0.49429425597190857     │
+│ test_recall_class_5_FEMALE │     0.4148525297641754     │
+│  test_recall_class_5_MALE  │     0.5737359523773193     │
+└────────────────────────────┴────────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 454/454 0:01:17 • 0:00:00 5.91it/s  
 wandb: updating run metadata
-wandb: updating run metadata; uploading output.log; uploading wandb-summary.json
-wandb: uploading history steps 726-726, summary, console lines 49-72
+wandb: uploading output.log; uploading config.yaml
 wandb: 
 wandb: Run history:
-wandb:               epoch ▁▁▁▁▁▂▂▂▂▂▂▃▃▃▃▄▄▄▄▄▅▅▅▅▅▅▆▆▆▆▇▇▇▇▇▇████
-wandb:            test_acc ▁
-wandb:      test_acc_epoch ▁
-wandb:     test_avg_recall ▁
-wandb:           test_loss ▁
-wandb: test_recall_class_0 ▁
-wandb: test_recall_class_1 ▁
-wandb: test_recall_class_2 ▁
-wandb: test_recall_class_3 ▁
-wandb: test_recall_class_4 ▁
-wandb:                  +8 ...
+wandb:                      epoch ▁
+wandb:                   test_acc ▁
+wandb:             test_acc_epoch ▁
+wandb:            test_avg_recall ▁
+wandb:                  test_loss ▁
+wandb:        test_recall_class_0 ▁
+wandb: test_recall_class_0_FEMALE ▁
+wandb:   test_recall_class_0_MALE ▁
+wandb:        test_recall_class_1 ▁
+wandb: test_recall_class_1_FEMALE ▁
+wandb:                        +14 ...
 wandb: 
 wandb: Run summary:
-wandb:               epoch 20
-wandb:            test_acc 0.82564
-wandb:      test_acc_epoch 0.82564
-wandb:     test_avg_recall 0.79632
-wandb:           test_loss 0.66259
-wandb: test_recall_class_0 0.84531
-wandb: test_recall_class_1 0.94118
-wandb: test_recall_class_2 0.94965
-wandb: test_recall_class_3 0.78319
-wandb: test_recall_class_4 0.7643
-wandb:                  +8 ...
+wandb:                      epoch 0
+wandb:                   test_acc 0.82564
+wandb:             test_acc_epoch 0.82564
+wandb:            test_avg_recall 0.79632
+wandb:                  test_loss 0.66259
+wandb:        test_recall_class_0 0.84531
+wandb: test_recall_class_0_FEMALE 0.81615
+wandb:   test_recall_class_0_MALE 0.87447
+wandb:        test_recall_class_1 0.94118
+wandb: test_recall_class_1_FEMALE 0.93962
+wandb:                        +14 ...
 wandb: 
-wandb: 🚀 View run Repres_bias_f0.0 at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/vvmwzazs
+wandb: 🚀 View run Repres_bias_f0.0 at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/557wa3lf
 wandb: ⭐️ View project at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis
-wandb: Synced 5 W&B file(s), 0 media file(s), 8 artifact file(s) and 0 other file(s)
-wandb: Find logs at: wandb/run-20260217_124518-vvmwzazs/logs
+wandb: Synced 5 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: wandb/run-20260224_121304-557wa3lf/logs
 Using 16bit Automatic Mixed Precision (AMP)
+💡 Tip: For seamless cloud uploads and versioning, try installing [litmodels](https://pypi.org/project/litmodels/) to enable LitModelCheckpoint, which syncs automatically with the Lightning model registry.
 GPU available: True (cuda), used: True
 TPU available: False, using: 0 TPU cores
-wandb: setting up run 1krygjt0
+wandb: setting up run mymhw287
 wandb: Tracking run with wandb version 0.24.1
-wandb: Run data is saved locally in wandb/run-20260217_135918-1krygjt0
+wandb: Run data is saved locally in wandb/run-20260224_121436-mymhw287
 wandb: Run `wandb offline` to turn off syncing.
 wandb: Syncing run Repres_bias_f0.25
 wandb: ⭐️ View project at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis
-wandb: 🚀 View run at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/1krygjt0
-/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/callbacks/model_checkpoint.py:881: Checkpoint directory /home/mgutierrez/TFM/checkpoints/Repres_bias_f0.25 exists and is not empty.
-LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/utilities/model_summary/model_summary.py:242: Precision 16-mixed is not supported by the model summary.  Estimated model size in MB will not be accurate. Using 32 bits instead.
-Probando experimentos con f=0.25
-Hiperparámetros del modelo"lr":        0.002
-"n_outputs": 6
-Contingency table: representational, f=0.25
-gender      Female   Male
-temp_label               
-0             3658  10976
-1             3658  10976
-2             3658  10976
-3             3658  10976
-4             3658  10976
-5             3658  10976
-┏━━━┳━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
-┃   ┃ Name                  ┃ Type                      ┃ Params ┃ Mode  ┃ FLOPs ┃
-┡━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
-│ 0 │ model                 │ ResNet                    │ 23.5 M │ train │     0 │
-│ 1 │ loss                  │ CrossEntropyLoss          │      0 │ train │     0 │
-│ 2 │ training_acc          │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 3 │ valid_acc             │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 4 │ test_acc              │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 5 │ conf_matrix           │ MulticlassConfusionMatrix │      0 │ train │     0 │
-│ 6 │ test_recall_per_class │ MulticlassRecall          │      0 │ train │     0 │
-│ 7 │ test_avg_recall       │ MulticlassRecall          │      0 │ train │     0 │
-└───┴───────────────────────┴───────────────────────────┴────────┴───────┴───────┘
-Trainable params: 23.5 M                                                                                                                                                                                                                                
-Non-trainable params: 0                                                                                                                                                                                                                                 
-Total params: 23.5 M                                                                                                                                                                                                                                    
-Total estimated model params size (MB): 94                                                                                                                                                                                                              
-Modules in train mode: 158                                                                                                                                                                                                                              
-Modules in eval mode: 0                                                                                                                                                                                                                                 
-Total FLOPs: 0                                                                                                                                                                                                                                          
-`Trainer.fit` stopped: `max_epochs=20` reached.
-Epoch 19/19 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 343/343 0:02:35 • 0:00:00 2.22it/s v_num: gjt0 train_acc_step: 0.992 val_loss: 0.694 val_acc: 0.864 train_acc_epoch: 0.987
-Restoring states from the checkpoint path at /home/mgutierrez/TFM/checkpoints/Repres_bias_f0.25/best-model-epoch=07-val_loss=0.52.ckpt
+wandb: 🚀 View run at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/mymhw287
+Restoring states from the checkpoint path at checkpoints/Repres_bias_f0.25/best-model-epoch=07-val_loss=0.52.ckpt
 /home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/fabric/utilities/cloud_io.py:73: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/trainer/call.py:283: Be aware that when using `ckpt_path`, callbacks used to create the checkpoint need to be provided during `Trainer` instantiation. Please add the following callbacks: ["ModelCheckpoint{'monitor': 'val_loss', 'mode': 'min', 'every_n_train_steps': 0, 'every_n_epochs': 1, 'train_time_interval': None}"].
 LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-Loaded model weights from the checkpoint at /home/mgutierrez/TFM/checkpoints/Repres_bias_f0.25/best-model-epoch=07-val_loss=0.52.ckpt
+Loaded model weights from the checkpoint at checkpoints/Repres_bias_f0.25/best-model-epoch=07-val_loss=0.52.ckpt
+Experiment {'bias_type': 'representational', 'f': 0.0, 'ckpt': 'checkpoints/Repres_bias_f0.0/best-model-epoch=08-val_loss=0.78.ckpt'} finished, going for next one
 Contingency table: representational, f=0.25
 gender      Female   Male
 temp_label               
@@ -192,105 +131,84 @@ tensor([[43686,  1226,   747,  1135,   314,  6870],
         [  584,   245,     4,  7351,   459,   397],
         [  237,   428,     6,   343,  8887,   205],
         [ 2209,   224,    50,   138,    28,  8743]], device='cuda:0')
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃        Test metric        ┃       DataLoader 0        ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│         test_acc          │    0.8475984930992126     │
-│      test_acc_epoch       │    0.8475984930992126     │
-│      test_avg_recall      │    0.8629588484764099     │
-│         test_loss         │    0.4410707950592041     │
-│    test_recall_class_0    │    0.8093297481536865     │
-│    test_recall_class_1    │    0.9223417043685913     │
-│    test_recall_class_2    │     0.986070990562439     │
-│    test_recall_class_3    │     0.813163697719574     │
-│    test_recall_class_4    │    0.8793785572052002     │
-│    test_recall_class_5    │    0.7674683928489685     │
-└───────────────────────────┴───────────────────────────┘
-Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 454/454 0:01:18 • 0:00:00 5.79it/s  
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric         ┃        DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│          test_acc          │     0.8475984930992126     │
+│       test_acc_epoch       │     0.8475984930992126     │
+│      test_avg_recall       │     0.8629588484764099     │
+│         test_loss          │     0.4410707950592041     │
+│    test_recall_class_0     │     0.8093297481536865     │
+│ test_recall_class_0_FEMALE │     0.7879877090454102     │
+│  test_recall_class_0_MALE  │     0.8306717276573181     │
+│    test_recall_class_1     │     0.9223417043685913     │
+│ test_recall_class_1_FEMALE │     0.9261097311973572     │
+│  test_recall_class_1_MALE  │     0.9185736775398254     │
+│    test_recall_class_2     │     0.986070990562439      │
+│ test_recall_class_2_FEMALE │     0.983904242515564      │
+│  test_recall_class_2_MALE  │     0.988237738609314      │
+│    test_recall_class_3     │     0.813163697719574      │
+│ test_recall_class_3_FEMALE │     0.7920354008674622     │
+│  test_recall_class_3_MALE  │     0.8342920541763306     │
+│    test_recall_class_4     │     0.8793785572052002     │
+│ test_recall_class_4_FEMALE │     0.8725509643554688     │
+│  test_recall_class_4_MALE  │     0.8862062096595764     │
+│    test_recall_class_5     │     0.7674683928489685     │
+│ test_recall_class_5_FEMALE │     0.7715941071510315     │
+│  test_recall_class_5_MALE  │     0.7633426785469055     │
+└────────────────────────────┴────────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 454/454 0:01:18 • 0:00:00 5.68it/s  
 wandb: updating run metadata
-wandb: uploading output.log; uploading wandb-summary.json
-wandb: uploading history steps 726-726, summary, console lines 46-68
+wandb: uploading config.yaml
+wandb: uploading history steps 0-0, summary, console lines 22-48
 wandb: 
 wandb: Run history:
-wandb:               epoch ▁▁▁▁▁▂▂▂▃▃▃▄▄▄▄▄▄▄▅▅▅▅▅▅▅▅▆▆▆▆▇▇▇▇▇▇████
-wandb:            test_acc ▁
-wandb:      test_acc_epoch ▁
-wandb:     test_avg_recall ▁
-wandb:           test_loss ▁
-wandb: test_recall_class_0 ▁
-wandb: test_recall_class_1 ▁
-wandb: test_recall_class_2 ▁
-wandb: test_recall_class_3 ▁
-wandb: test_recall_class_4 ▁
-wandb:                  +8 ...
+wandb:                      epoch ▁
+wandb:                   test_acc ▁
+wandb:             test_acc_epoch ▁
+wandb:            test_avg_recall ▁
+wandb:                  test_loss ▁
+wandb:        test_recall_class_0 ▁
+wandb: test_recall_class_0_FEMALE ▁
+wandb:   test_recall_class_0_MALE ▁
+wandb:        test_recall_class_1 ▁
+wandb: test_recall_class_1_FEMALE ▁
+wandb:                        +14 ...
 wandb: 
 wandb: Run summary:
-wandb:               epoch 20
-wandb:            test_acc 0.8476
-wandb:      test_acc_epoch 0.8476
-wandb:     test_avg_recall 0.86296
-wandb:           test_loss 0.44107
-wandb: test_recall_class_0 0.80933
-wandb: test_recall_class_1 0.92234
-wandb: test_recall_class_2 0.98607
-wandb: test_recall_class_3 0.81316
-wandb: test_recall_class_4 0.87938
-wandb:                  +8 ...
+wandb:                      epoch 0
+wandb:                   test_acc 0.8476
+wandb:             test_acc_epoch 0.8476
+wandb:            test_avg_recall 0.86296
+wandb:                  test_loss 0.44107
+wandb:        test_recall_class_0 0.80933
+wandb: test_recall_class_0_FEMALE 0.78799
+wandb:   test_recall_class_0_MALE 0.83067
+wandb:        test_recall_class_1 0.92234
+wandb: test_recall_class_1_FEMALE 0.92611
+wandb:                        +14 ...
 wandb: 
-wandb: 🚀 View run Repres_bias_f0.25 at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/1krygjt0
+wandb: 🚀 View run Repres_bias_f0.25 at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/mymhw287
 wandb: ⭐️ View project at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis
-wandb: Synced 5 W&B file(s), 0 media file(s), 12 artifact file(s) and 0 other file(s)
-wandb: Find logs at: wandb/run-20260217_135918-1krygjt0/logs
+wandb: Synced 5 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: wandb/run-20260224_121436-mymhw287/logs
 Using 16bit Automatic Mixed Precision (AMP)
+💡 Tip: For seamless cloud uploads and versioning, try installing [litmodels](https://pypi.org/project/litmodels/) to enable LitModelCheckpoint, which syncs automatically with the Lightning model registry.
 GPU available: True (cuda), used: True
 TPU available: False, using: 0 TPU cores
-wandb: setting up run rose3bz2
+wandb: setting up run a150vt1r
 wandb: Tracking run with wandb version 0.24.1
-wandb: Run data is saved locally in wandb/run-20260217_151147-rose3bz2
+wandb: Run data is saved locally in wandb/run-20260224_121610-a150vt1r
 wandb: Run `wandb offline` to turn off syncing.
 wandb: Syncing run Repres_bias_f0.5
 wandb: ⭐️ View project at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis
-wandb: 🚀 View run at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/rose3bz2
-/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/callbacks/model_checkpoint.py:881: Checkpoint directory /home/mgutierrez/TFM/checkpoints/Repres_bias_f0.5 exists and is not empty.
-LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/utilities/model_summary/model_summary.py:242: Precision 16-mixed is not supported by the model summary.  Estimated model size in MB will not be accurate. Using 32 bits instead.
-Probando experimentos con f=0.5
-Hiperparámetros del modelo"lr":        0.002
-"n_outputs": 6
-Contingency table: representational, f=0.5
-gender      Female  Male
-temp_label              
-0             7317  7317
-1             7317  7317
-2             7317  7317
-3             7317  7317
-4             7317  7317
-5             7317  7317
-┏━━━┳━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
-┃   ┃ Name                  ┃ Type                      ┃ Params ┃ Mode  ┃ FLOPs ┃
-┡━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
-│ 0 │ model                 │ ResNet                    │ 23.5 M │ train │     0 │
-│ 1 │ loss                  │ CrossEntropyLoss          │      0 │ train │     0 │
-│ 2 │ training_acc          │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 3 │ valid_acc             │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 4 │ test_acc              │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 5 │ conf_matrix           │ MulticlassConfusionMatrix │      0 │ train │     0 │
-│ 6 │ test_recall_per_class │ MulticlassRecall          │      0 │ train │     0 │
-│ 7 │ test_avg_recall       │ MulticlassRecall          │      0 │ train │     0 │
-└───┴───────────────────────┴───────────────────────────┴────────┴───────┴───────┘
-Trainable params: 23.5 M                                                                                                                                                                                                                                
-Non-trainable params: 0                                                                                                                                                                                                                                 
-Total params: 23.5 M                                                                                                                                                                                                                                    
-Total estimated model params size (MB): 94                                                                                                                                                                                                              
-Modules in train mode: 158                                                                                                                                                                                                                              
-Modules in eval mode: 0                                                                                                                                                                                                                                 
-Total FLOPs: 0                                                                                                                                                                                                                                          
-`Trainer.fit` stopped: `max_epochs=20` reached.
-Epoch 19/19 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 343/343 0:02:35 • 0:00:00 2.22it/s v_num: 3bz2 train_acc_step: 0.992 val_loss: 0.754 val_acc: 0.851 train_acc_epoch: 0.987
-Restoring states from the checkpoint path at /home/mgutierrez/TFM/checkpoints/Repres_bias_f0.5/best-model-epoch=07-val_loss=0.55.ckpt
+wandb: 🚀 View run at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/a150vt1r
+Restoring states from the checkpoint path at checkpoints/Repres_bias_f0.5/best-model-epoch=07-val_loss=0.55.ckpt
 /home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/fabric/utilities/cloud_io.py:73: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/trainer/call.py:283: Be aware that when using `ckpt_path`, callbacks used to create the checkpoint need to be provided during `Trainer` instantiation. Please add the following callbacks: ["ModelCheckpoint{'monitor': 'val_loss', 'mode': 'min', 'every_n_train_steps': 0, 'every_n_epochs': 1, 'train_time_interval': None}"].
 LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-Loaded model weights from the checkpoint at /home/mgutierrez/TFM/checkpoints/Repres_bias_f0.5/best-model-epoch=07-val_loss=0.55.ckpt
+Loaded model weights from the checkpoint at checkpoints/Repres_bias_f0.5/best-model-epoch=07-val_loss=0.55.ckpt
+Experiment {'bias_type': 'representational', 'f': 0.25, 'ckpt': 'checkpoints/Repres_bias_f0.25/best-model-epoch=07-val_loss=0.52.ckpt'} finished, going for next one
 Contingency table: representational, f=0.5
 gender      Female   Male
 temp_label               
@@ -308,105 +226,83 @@ tensor([[43248,   954,    66,  1786,   487,  7437],
         [  255,    86,     1,  7940,   562,   196],
         [  130,   343,     0,   519,  9034,    80],
         [ 2754,   209,     1,   214,    83,  8131]], device='cuda:0')
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃        Test metric        ┃       DataLoader 0        ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│         test_acc          │     0.841183066368103     │
-│      test_acc_epoch       │     0.841183066368103     │
-│      test_avg_recall      │    0.8575403690338135     │
-│         test_loss         │    0.48426538705825806    │
-│    test_recall_class_0    │    0.8012152910232544     │
-│    test_recall_class_1    │    0.9271666407585144     │
-│    test_recall_class_2    │    0.9308708310127258     │
-│    test_recall_class_3    │    0.8783186078071594     │
-│    test_recall_class_4    │    0.8939244151115417     │
-│    test_recall_class_5    │    0.7137464880943298     │
-└───────────────────────────┴───────────────────────────┘
-Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 454/454 0:01:18 • 0:00:00 5.78it/s  
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric         ┃        DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│          test_acc          │     0.841183066368103      │
+│       test_acc_epoch       │     0.841183066368103      │
+│      test_avg_recall       │     0.8575403690338135     │
+│         test_loss          │    0.48426538705825806     │
+│    test_recall_class_0     │     0.8012152910232544     │
+│ test_recall_class_0_FEMALE │     0.799103319644928      │
+│  test_recall_class_0_MALE  │     0.8033272624015808     │
+│    test_recall_class_1     │     0.9271666407585144     │
+│ test_recall_class_1_FEMALE │     0.9402628540992737     │
+│  test_recall_class_1_MALE  │     0.9140704274177551     │
+│    test_recall_class_2     │     0.9308708310127258     │
+│ test_recall_class_2_FEMALE │     0.9343788623809814     │
+│  test_recall_class_2_MALE  │     0.9273627996444702     │
+│    test_recall_class_3     │     0.8783186078071594     │
+│ test_recall_class_3_FEMALE │     0.8672566413879395     │
+│  test_recall_class_3_MALE  │     0.8893805146217346     │
+│    test_recall_class_4     │     0.8939244151115417     │
+│ test_recall_class_4_FEMALE │     0.8990698456764221     │
+│  test_recall_class_4_MALE  │     0.8887789249420166     │
+│    test_recall_class_5     │     0.7137464880943298     │
+│ test_recall_class_5_FEMALE │     0.7568469047546387     │
+│  test_recall_class_5_MALE  │     0.670646071434021      │
+└────────────────────────────┴────────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 454/454 0:01:17 • 0:00:00 5.85it/s  
 wandb: updating run metadata
-wandb: uploading output.log; uploading wandb-summary.json; uploading config.yaml
-wandb: uploading history steps 726-726, summary, console lines 46-68
+wandb: uploading config.yaml
 wandb: 
 wandb: Run history:
-wandb:               epoch ▁▁▁▂▂▂▃▃▃▃▃▃▃▃▃▄▄▄▅▅▅▅▅▆▆▆▆▆▆▆▆▆▇▇▇█████
-wandb:            test_acc ▁
-wandb:      test_acc_epoch ▁
-wandb:     test_avg_recall ▁
-wandb:           test_loss ▁
-wandb: test_recall_class_0 ▁
-wandb: test_recall_class_1 ▁
-wandb: test_recall_class_2 ▁
-wandb: test_recall_class_3 ▁
-wandb: test_recall_class_4 ▁
-wandb:                  +8 ...
+wandb:                      epoch ▁
+wandb:                   test_acc ▁
+wandb:             test_acc_epoch ▁
+wandb:            test_avg_recall ▁
+wandb:                  test_loss ▁
+wandb:        test_recall_class_0 ▁
+wandb: test_recall_class_0_FEMALE ▁
+wandb:   test_recall_class_0_MALE ▁
+wandb:        test_recall_class_1 ▁
+wandb: test_recall_class_1_FEMALE ▁
+wandb:                        +14 ...
 wandb: 
 wandb: Run summary:
-wandb:               epoch 20
-wandb:            test_acc 0.84118
-wandb:      test_acc_epoch 0.84118
-wandb:     test_avg_recall 0.85754
-wandb:           test_loss 0.48427
-wandb: test_recall_class_0 0.80122
-wandb: test_recall_class_1 0.92717
-wandb: test_recall_class_2 0.93087
-wandb: test_recall_class_3 0.87832
-wandb: test_recall_class_4 0.89392
-wandb:                  +8 ...
+wandb:                      epoch 0
+wandb:                   test_acc 0.84118
+wandb:             test_acc_epoch 0.84118
+wandb:            test_avg_recall 0.85754
+wandb:                  test_loss 0.48427
+wandb:        test_recall_class_0 0.80122
+wandb: test_recall_class_0_FEMALE 0.7991
+wandb:   test_recall_class_0_MALE 0.80333
+wandb:        test_recall_class_1 0.92717
+wandb: test_recall_class_1_FEMALE 0.94026
+wandb:                        +14 ...
 wandb: 
-wandb: 🚀 View run Repres_bias_f0.5 at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/rose3bz2
+wandb: 🚀 View run Repres_bias_f0.5 at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/a150vt1r
 wandb: ⭐️ View project at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis
-wandb: Synced 5 W&B file(s), 0 media file(s), 10 artifact file(s) and 0 other file(s)
-wandb: Find logs at: wandb/run-20260217_151147-rose3bz2/logs
+wandb: Synced 5 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: wandb/run-20260224_121610-a150vt1r/logs
 Using 16bit Automatic Mixed Precision (AMP)
+💡 Tip: For seamless cloud uploads and versioning, try installing [litmodels](https://pypi.org/project/litmodels/) to enable LitModelCheckpoint, which syncs automatically with the Lightning model registry.
 GPU available: True (cuda), used: True
 TPU available: False, using: 0 TPU cores
-wandb: setting up run 88nkriqb
+wandb: setting up run kzsfmrra
 wandb: Tracking run with wandb version 0.24.1
-wandb: Run data is saved locally in wandb/run-20260217_162527-88nkriqb
+wandb: Run data is saved locally in wandb/run-20260224_121742-kzsfmrra
 wandb: Run `wandb offline` to turn off syncing.
 wandb: Syncing run Repres_bias_f0.75
 wandb: ⭐️ View project at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis
-wandb: 🚀 View run at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/88nkriqb
-/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/callbacks/model_checkpoint.py:881: Checkpoint directory /home/mgutierrez/TFM/checkpoints/Repres_bias_f0.75 exists and is not empty.
-LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/utilities/model_summary/model_summary.py:242: Precision 16-mixed is not supported by the model summary.  Estimated model size in MB will not be accurate. Using 32 bits instead.
-Probando experimentos con f=0.75
-Hiperparámetros del modelo"lr":        0.002
-"n_outputs": 6
-Contingency table: representational, f=0.75
-gender      Female  Male
-temp_label              
-0            10975  3659
-1            10975  3659
-2            10975  3659
-3            10975  3659
-4            10975  3659
-5            10975  3659
-┏━━━┳━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
-┃   ┃ Name                  ┃ Type                      ┃ Params ┃ Mode  ┃ FLOPs ┃
-┡━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
-│ 0 │ model                 │ ResNet                    │ 23.5 M │ train │     0 │
-│ 1 │ loss                  │ CrossEntropyLoss          │      0 │ train │     0 │
-│ 2 │ training_acc          │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 3 │ valid_acc             │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 4 │ test_acc              │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 5 │ conf_matrix           │ MulticlassConfusionMatrix │      0 │ train │     0 │
-│ 6 │ test_recall_per_class │ MulticlassRecall          │      0 │ train │     0 │
-│ 7 │ test_avg_recall       │ MulticlassRecall          │      0 │ train │     0 │
-└───┴───────────────────────┴───────────────────────────┴────────┴───────┴───────┘
-Trainable params: 23.5 M                                                                                                                                                                                                                                
-Non-trainable params: 0                                                                                                                                                                                                                                 
-Total params: 23.5 M                                                                                                                                                                                                                                    
-Total estimated model params size (MB): 94                                                                                                                                                                                                              
-Modules in train mode: 158                                                                                                                                                                                                                              
-Modules in eval mode: 0                                                                                                                                                                                                                                 
-Total FLOPs: 0                                                                                                                                                                                                                                          
-`Trainer.fit` stopped: `max_epochs=20` reached.
-Epoch 19/19 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 343/343 0:02:34 • 0:00:00 2.25it/s v_num: riqb train_acc_step: 1.000 val_loss: 0.904 val_acc: 0.824 train_acc_epoch: 0.987
-Restoring states from the checkpoint path at /home/mgutierrez/TFM/checkpoints/Repres_bias_f0.75/best-model-epoch=05-val_loss=0.56.ckpt
+wandb: 🚀 View run at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/kzsfmrra
+Restoring states from the checkpoint path at checkpoints/Repres_bias_f0.75/best-model-epoch=05-val_loss=0.56.ckpt
 /home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/fabric/utilities/cloud_io.py:73: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/trainer/call.py:283: Be aware that when using `ckpt_path`, callbacks used to create the checkpoint need to be provided during `Trainer` instantiation. Please add the following callbacks: ["ModelCheckpoint{'monitor': 'val_loss', 'mode': 'min', 'every_n_train_steps': 0, 'every_n_epochs': 1, 'train_time_interval': None}"].
 LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-Loaded model weights from the checkpoint at /home/mgutierrez/TFM/checkpoints/Repres_bias_f0.75/best-model-epoch=05-val_loss=0.56.ckpt
+Loaded model weights from the checkpoint at checkpoints/Repres_bias_f0.75/best-model-epoch=05-val_loss=0.56.ckpt
+Experiment {'bias_type': 'representational', 'f': 0.5, 'ckpt': 'checkpoints/Repres_bias_f0.5/best-model-epoch=07-val_loss=0.55.ckpt'} finished, going for next one
 Contingency table: representational, f=0.75
 gender      Female   Male
 temp_label               
@@ -424,104 +320,83 @@ tensor([[42825,   539,   623,  1078,   684,  8229],
         [  497,    78,     0,  7125,  1043,   297],
         [  151,   287,     2,   401,  9178,    87],
         [ 2086,   137,    19,   170,    64,  8916]], device='cuda:0')
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃        Test metric        ┃       DataLoader 0        ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│         test_acc          │    0.8258601427078247     │
-│      test_acc_epoch       │    0.8258601427078247     │
-│      test_avg_recall      │    0.8484604954719543     │
-│         test_loss         │    0.4990338683128357     │
-│    test_recall_class_0    │    0.7933787703514099     │
-│    test_recall_class_1    │    0.8373770713806152     │
-│    test_recall_class_2    │    0.9810152649879456     │
-│    test_recall_class_3    │    0.7881637215614319     │
-│    test_recall_class_4    │    0.9081733822822571     │
-│    test_recall_class_5    │    0.7826545238494873     │
-└───────────────────────────┴───────────────────────────┘
-Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 454/454 0:01:17 • 0:00:00 5.89it/s  
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric         ┃        DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│          test_acc          │     0.8258601427078247     │
+│       test_acc_epoch       │     0.8258601427078247     │
+│      test_avg_recall       │     0.8484604954719543     │
+│         test_loss          │     0.4990338683128357     │
+│    test_recall_class_0     │     0.7933787703514099     │
+│ test_recall_class_0_FEMALE │     0.8102930784225464     │
+│  test_recall_class_0_MALE  │     0.7764644622802734     │
+│    test_recall_class_1     │     0.8373770713806152     │
+│ test_recall_class_1_FEMALE │     0.8629721403121948     │
+│  test_recall_class_1_MALE  │     0.8117820024490356     │
+│    test_recall_class_2     │     0.9810152649879456     │
+│ test_recall_class_2_FEMALE │     0.9824597835540771     │
+│  test_recall_class_2_MALE  │     0.9795708060264587     │
+│    test_recall_class_3     │     0.7881637215614319     │
+│ test_recall_class_3_FEMALE │     0.8099557757377625     │
+│  test_recall_class_3_MALE  │     0.7663716673851013     │
+│    test_recall_class_4     │     0.9081733822822571     │
+│ test_recall_class_4_FEMALE │     0.9309321045875549     │
+│  test_recall_class_4_MALE  │     0.8854146003723145     │
+│    test_recall_class_5     │     0.7826545238494873     │
+│ test_recall_class_5_FEMALE │     0.8156601190567017     │
+│  test_recall_class_5_MALE  │     0.7496488690376282     │
+└────────────────────────────┴────────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 454/454 0:01:17 • 0:00:00 5.83it/s  
 wandb: updating run metadata
-wandb: uploading output.log; uploading wandb-summary.json; uploading config.yaml
-wandb: uploading history steps 726-726, summary, console lines 46-68
+wandb: uploading config.yaml
 wandb: 
 wandb: Run history:
-wandb:               epoch ▁▁▁▁▁▂▂▂▂▂▂▂▂▃▃▄▄▄▄▅▅▅▅▆▆▆▆▇▇▇▇▇▇▇▇▇████
-wandb:            test_acc ▁
-wandb:      test_acc_epoch ▁
-wandb:     test_avg_recall ▁
-wandb:           test_loss ▁
-wandb: test_recall_class_0 ▁
-wandb: test_recall_class_1 ▁
-wandb: test_recall_class_2 ▁
-wandb: test_recall_class_3 ▁
-wandb: test_recall_class_4 ▁
-wandb:                  +8 ...
+wandb:                      epoch ▁
+wandb:                   test_acc ▁
+wandb:             test_acc_epoch ▁
+wandb:            test_avg_recall ▁
+wandb:                  test_loss ▁
+wandb:        test_recall_class_0 ▁
+wandb: test_recall_class_0_FEMALE ▁
+wandb:   test_recall_class_0_MALE ▁
+wandb:        test_recall_class_1 ▁
+wandb: test_recall_class_1_FEMALE ▁
+wandb:                        +14 ...
 wandb: 
 wandb: Run summary:
-wandb:               epoch 20
-wandb:            test_acc 0.82586
-wandb:      test_acc_epoch 0.82586
-wandb:     test_avg_recall 0.84846
-wandb:           test_loss 0.49903
-wandb: test_recall_class_0 0.79338
-wandb: test_recall_class_1 0.83738
-wandb: test_recall_class_2 0.98102
-wandb: test_recall_class_3 0.78816
-wandb: test_recall_class_4 0.90817
-wandb:                  +8 ...
+wandb:                      epoch 0
+wandb:                   test_acc 0.82586
+wandb:             test_acc_epoch 0.82586
+wandb:            test_avg_recall 0.84846
+wandb:                  test_loss 0.49903
+wandb:        test_recall_class_0 0.79338
+wandb: test_recall_class_0_FEMALE 0.81029
+wandb:   test_recall_class_0_MALE 0.77646
+wandb:        test_recall_class_1 0.83738
+wandb: test_recall_class_1_FEMALE 0.86297
+wandb:                        +14 ...
 wandb: 
-wandb: 🚀 View run Repres_bias_f0.75 at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/88nkriqb
+wandb: 🚀 View run Repres_bias_f0.75 at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/kzsfmrra
 wandb: ⭐️ View project at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis
-wandb: Synced 5 W&B file(s), 0 media file(s), 6 artifact file(s) and 0 other file(s)
-wandb: Find logs at: wandb/run-20260217_162527-88nkriqb/logs
+wandb: Synced 5 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: wandb/run-20260224_121742-kzsfmrra/logs
 Using 16bit Automatic Mixed Precision (AMP)
+💡 Tip: For seamless cloud uploads and versioning, try installing [litmodels](https://pypi.org/project/litmodels/) to enable LitModelCheckpoint, which syncs automatically with the Lightning model registry.
 GPU available: True (cuda), used: True
 TPU available: False, using: 0 TPU cores
-wandb: setting up run qh0mqfxr
+wandb: setting up run ann1xe2r
 wandb: Tracking run with wandb version 0.24.1
-wandb: Run data is saved locally in wandb/run-20260217_173748-qh0mqfxr
+wandb: Run data is saved locally in wandb/run-20260224_121916-ann1xe2r
 wandb: Run `wandb offline` to turn off syncing.
 wandb: Syncing run Repres_bias_f1.0
 wandb: ⭐️ View project at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis
-wandb: 🚀 View run at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/qh0mqfxr
-LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/utilities/model_summary/model_summary.py:242: Precision 16-mixed is not supported by the model summary.  Estimated model size in MB will not be accurate. Using 32 bits instead.
-Probando experimentos con f=1.0
-Hiperparámetros del modelo"lr":        0.002
-"n_outputs": 6
-Contingency table: representational, f=1.0
-gender      Female
-temp_label        
-0            14634
-1            14634
-2            14634
-3            14634
-4            14634
-5            14634
-┏━━━┳━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
-┃   ┃ Name                  ┃ Type                      ┃ Params ┃ Mode  ┃ FLOPs ┃
-┡━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
-│ 0 │ model                 │ ResNet                    │ 23.5 M │ train │     0 │
-│ 1 │ loss                  │ CrossEntropyLoss          │      0 │ train │     0 │
-│ 2 │ training_acc          │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 3 │ valid_acc             │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 4 │ test_acc              │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 5 │ conf_matrix           │ MulticlassConfusionMatrix │      0 │ train │     0 │
-│ 6 │ test_recall_per_class │ MulticlassRecall          │      0 │ train │     0 │
-│ 7 │ test_avg_recall       │ MulticlassRecall          │      0 │ train │     0 │
-└───┴───────────────────────┴───────────────────────────┴────────┴───────┴───────┘
-Trainable params: 23.5 M                                                                                                                                                                                                                                
-Non-trainable params: 0                                                                                                                                                                                                                                 
-Total params: 23.5 M                                                                                                                                                                                                                                    
-Total estimated model params size (MB): 94                                                                                                                                                                                                              
-Modules in train mode: 158                                                                                                                                                                                                                              
-Modules in eval mode: 0                                                                                                                                                                                                                                 
-Total FLOPs: 0                                                                                                                                                                                                                                          
-`Trainer.fit` stopped: `max_epochs=20` reached.
-Epoch 19/19 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 343/343 0:02:36 • 0:00:00 2.21it/s v_num: qfxr train_acc_step: 0.992 val_loss: 1.087 val_acc: 0.807 train_acc_epoch: 0.990
-Restoring states from the checkpoint path at /home/mgutierrez/TFM/checkpoints/Repres_bias_f1.0/best-model-epoch=02-val_loss=0.83.ckpt
+wandb: 🚀 View run at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/ann1xe2r
+Restoring states from the checkpoint path at checkpoints/Repres_bias_f1.0/best-model-epoch=02-val_loss=0.83.ckpt
 /home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/fabric/utilities/cloud_io.py:73: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/trainer/call.py:283: Be aware that when using `ckpt_path`, callbacks used to create the checkpoint need to be provided during `Trainer` instantiation. Please add the following callbacks: ["ModelCheckpoint{'monitor': 'val_loss', 'mode': 'min', 'every_n_train_steps': 0, 'every_n_epochs': 1, 'train_time_interval': None}"].
 LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-Loaded model weights from the checkpoint at /home/mgutierrez/TFM/checkpoints/Repres_bias_f1.0/best-model-epoch=02-val_loss=0.83.ckpt
+Loaded model weights from the checkpoint at checkpoints/Repres_bias_f1.0/best-model-epoch=02-val_loss=0.83.ckpt
+Experiment {'bias_type': 'representational', 'f': 0.75, 'ckpt': 'checkpoints/Repres_bias_f0.75/best-model-epoch=05-val_loss=0.56.ckpt'} finished, going for next one
 Contingency table: representational, f=1.0
 gender      Female   Male
 temp_label               
@@ -539,103 +414,83 @@ tensor([[44106,   528,   181,  4414,  2386,  2363],
         [  278,    43,     0,  6353,  2330,    36],
         [  211,   407,     1,   533,  8914,    40],
         [ 5543,    76,    18,  1125,   481,  4149]], device='cuda:0')
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃        Test metric        ┃       DataLoader 0        ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│         test_acc          │    0.7634215950965881     │
-│      test_acc_epoch       │    0.7634215950965881     │
-│      test_avg_recall      │    0.7319896221160889     │
-│         test_loss         │    0.7318861484527588     │
-│    test_recall_class_0    │    0.8171106576919556     │
-│    test_recall_class_1    │     0.766749382019043     │
-│    test_recall_class_2    │    0.8590590357780457     │
-│    test_recall_class_3    │    0.7027654647827148     │
-│    test_recall_class_4    │    0.8820502758026123     │
-│    test_recall_class_5    │    0.36420294642448425    │
-└───────────────────────────┴───────────────────────────┘
-Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 454/454 0:01:25 • 0:00:00 5.34it/s  
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric         ┃        DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│          test_acc          │     0.7634215950965881     │
+│       test_acc_epoch       │     0.7634215950965881     │
+│      test_avg_recall       │     0.7319896221160889     │
+│         test_loss          │     0.7318861484527588     │
+│    test_recall_class_0     │     0.8171106576919556     │
+│ test_recall_class_0_FEMALE │     0.853347659111023      │
+│  test_recall_class_0_MALE  │     0.780873715877533      │
+│    test_recall_class_1     │     0.766749382019043      │
+│ test_recall_class_1_FEMALE │     0.8472566604614258     │
+│  test_recall_class_1_MALE  │     0.6862420439720154     │
+│    test_recall_class_2     │     0.8590590357780457     │
+│ test_recall_class_2_FEMALE │     0.9050763249397278     │
+│  test_recall_class_2_MALE  │     0.8130416870117188     │
+│    test_recall_class_3     │     0.7027654647827148     │
+│ test_recall_class_3_FEMALE │     0.7887167930603027     │
+│  test_recall_class_3_MALE  │     0.616814136505127      │
+│    test_recall_class_4     │     0.8820502758026123     │
+│ test_recall_class_4_FEMALE │     0.9204432964324951     │
+│  test_recall_class_4_MALE  │     0.8436572551727295     │
+│    test_recall_class_5     │    0.36420294642448425     │
+│ test_recall_class_5_FEMALE │     0.424332857131958      │
+│  test_recall_class_5_MALE  │     0.3040730357170105     │
+└────────────────────────────┴────────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 454/454 0:01:17 • 0:00:00 5.81it/s  
 wandb: updating run metadata
-wandb: uploading config.yaml
+wandb: uploading data
 wandb: 
 wandb: Run history:
-wandb:               epoch ▁▁▁▁▂▂▂▃▃▃▃▃▄▄▄▄▄▄▄▄▅▅▅▅▅▆▆▆▆▆▇▇▇▇▇▇████
-wandb:            test_acc ▁
-wandb:      test_acc_epoch ▁
-wandb:     test_avg_recall ▁
-wandb:           test_loss ▁
-wandb: test_recall_class_0 ▁
-wandb: test_recall_class_1 ▁
-wandb: test_recall_class_2 ▁
-wandb: test_recall_class_3 ▁
-wandb: test_recall_class_4 ▁
-wandb:                  +8 ...
+wandb:                      epoch ▁
+wandb:                   test_acc ▁
+wandb:             test_acc_epoch ▁
+wandb:            test_avg_recall ▁
+wandb:                  test_loss ▁
+wandb:        test_recall_class_0 ▁
+wandb: test_recall_class_0_FEMALE ▁
+wandb:   test_recall_class_0_MALE ▁
+wandb:        test_recall_class_1 ▁
+wandb: test_recall_class_1_FEMALE ▁
+wandb:                        +14 ...
 wandb: 
 wandb: Run summary:
-wandb:               epoch 20
-wandb:            test_acc 0.76342
-wandb:      test_acc_epoch 0.76342
-wandb:     test_avg_recall 0.73199
-wandb:           test_loss 0.73189
-wandb: test_recall_class_0 0.81711
-wandb: test_recall_class_1 0.76675
-wandb: test_recall_class_2 0.85906
-wandb: test_recall_class_3 0.70277
-wandb: test_recall_class_4 0.88205
-wandb:                  +8 ...
+wandb:                      epoch 0
+wandb:                   test_acc 0.76342
+wandb:             test_acc_epoch 0.76342
+wandb:            test_avg_recall 0.73199
+wandb:                  test_loss 0.73189
+wandb:        test_recall_class_0 0.81711
+wandb: test_recall_class_0_FEMALE 0.85335
+wandb:   test_recall_class_0_MALE 0.78087
+wandb:        test_recall_class_1 0.76675
+wandb: test_recall_class_1_FEMALE 0.84726
+wandb:                        +14 ...
 wandb: 
-wandb: 🚀 View run Repres_bias_f1.0 at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/qh0mqfxr
+wandb: 🚀 View run Repres_bias_f1.0 at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/ann1xe2r
 wandb: ⭐️ View project at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis
-wandb: Synced 5 W&B file(s), 0 media file(s), 6 artifact file(s) and 0 other file(s)
-wandb: Find logs at: wandb/run-20260217_173748-qh0mqfxr/logs
+wandb: Synced 5 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: wandb/run-20260224_121916-ann1xe2r/logs
 Using 16bit Automatic Mixed Precision (AMP)
+💡 Tip: For seamless cloud uploads and versioning, try installing [litmodels](https://pypi.org/project/litmodels/) to enable LitModelCheckpoint, which syncs automatically with the Lightning model registry.
 GPU available: True (cuda), used: True
 TPU available: False, using: 0 TPU cores
-wandb: setting up run lz61jw44
+wandb: setting up run 3fkb39rz
 wandb: Tracking run with wandb version 0.24.1
-wandb: Run data is saved locally in wandb/run-20260217_185047-lz61jw44
+wandb: Run data is saved locally in wandb/run-20260224_122049-3fkb39rz
 wandb: Run `wandb offline` to turn off syncing.
 wandb: Syncing run Stereotipical_bias_f0.0
 wandb: ⭐️ View project at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis
-wandb: 🚀 View run at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/lz61jw44
-LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/utilities/model_summary/model_summary.py:242: Precision 16-mixed is not supported by the model summary.  Estimated model size in MB will not be accurate. Using 32 bits instead.
-Analizando sesgos estereotípicos
-Hiperparámetros del modelo"lr":        0.002
-"n_outputs": 6
-Contingency table: stereotipical, f=0.0
-gender      Female   Male
-temp_label               
-0             7317   7317
-1             7317   7317
-2                0  14634
-3             7317   7317
-4             7317   7317
-5             7317   7317
-┏━━━┳━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
-┃   ┃ Name                  ┃ Type                      ┃ Params ┃ Mode  ┃ FLOPs ┃
-┡━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
-│ 0 │ model                 │ ResNet                    │ 23.5 M │ train │     0 │
-│ 1 │ loss                  │ CrossEntropyLoss          │      0 │ train │     0 │
-│ 2 │ training_acc          │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 3 │ valid_acc             │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 4 │ test_acc              │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 5 │ conf_matrix           │ MulticlassConfusionMatrix │      0 │ train │     0 │
-│ 6 │ test_recall_per_class │ MulticlassRecall          │      0 │ train │     0 │
-│ 7 │ test_avg_recall       │ MulticlassRecall          │      0 │ train │     0 │
-└───┴───────────────────────┴───────────────────────────┴────────┴───────┴───────┘
-Trainable params: 23.5 M                                                                                                                                                                                                                                
-Non-trainable params: 0                                                                                                                                                                                                                                 
-Total params: 23.5 M                                                                                                                                                                                                                                    
-Total estimated model params size (MB): 94                                                                                                                                                                                                              
-Modules in train mode: 158                                                                                                                                                                                                                              
-Modules in eval mode: 0                                                                                                                                                                                                                                 
-Total FLOPs: 0                                                                                                                                                                                                                                          
-`Trainer.fit` stopped: `max_epochs=20` reached.
-Epoch 19/19 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 343/343 0:02:35 • 0:00:00 2.22it/s v_num: jw44 train_acc_step: 0.988 val_loss: 0.796 val_acc: 0.843 train_acc_epoch: 0.987
-Restoring states from the checkpoint path at /home/mgutierrez/TFM/checkpoints/Stereotipical_bias_f0.0/best-model-epoch=04-val_loss=0.56.ckpt
+wandb: 🚀 View run at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/3fkb39rz
+Restoring states from the checkpoint path at checkpoints/Stereotipical_bias_f0.0/best-model-epoch=04-val_loss=0.56.ckpt
 /home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/fabric/utilities/cloud_io.py:73: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/trainer/call.py:283: Be aware that when using `ckpt_path`, callbacks used to create the checkpoint need to be provided during `Trainer` instantiation. Please add the following callbacks: ["ModelCheckpoint{'monitor': 'val_loss', 'mode': 'min', 'every_n_train_steps': 0, 'every_n_epochs': 1, 'train_time_interval': None}"].
 LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-Loaded model weights from the checkpoint at /home/mgutierrez/TFM/checkpoints/Stereotipical_bias_f0.0/best-model-epoch=04-val_loss=0.56.ckpt
+Loaded model weights from the checkpoint at checkpoints/Stereotipical_bias_f0.0/best-model-epoch=04-val_loss=0.56.ckpt
+Experiment {'bias_type': 'representational', 'f': 1.0, 'ckpt': 'checkpoints/Repres_bias_f1.0/best-model-epoch=02-val_loss=0.83.ckpt'} finished, going for next one
 Contingency table: stereotipical, f=0.0
 gender      Female   Male
 temp_label               
@@ -653,102 +508,83 @@ tensor([[36266,  1273,  1590,   863,   244, 13742],
         [  709,   153,     2,  7284,   563,   329],
         [  267,   398,     5,   592,  8790,    54],
         [ 1311,   108,    58,   139,    42,  9734]], device='cuda:0')
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃        Test metric        ┃       DataLoader 0        ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│         test_acc          │    0.7916616201400757     │
-│      test_acc_epoch       │    0.7916616201400757     │
-│      test_avg_recall      │    0.8516079783439636     │
-│         test_loss         │    0.5273850560188293     │
-│    test_recall_class_0    │    0.6718662977218628     │
-│    test_recall_class_1    │    0.9316239356994629     │
-│    test_recall_class_2    │    0.9761658906936646     │
-│    test_recall_class_3    │    0.8057522177696228     │
-│    test_recall_class_4    │    0.8697803020477295     │
-│    test_recall_class_5    │     0.854459285736084     │
-└───────────────────────────┴───────────────────────────┘
-Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 454/454 0:01:18 • 0:00:00 5.81it/s  
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric         ┃        DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│          test_acc          │     0.7916616201400757     │
+│       test_acc_epoch       │     0.7916616201400757     │
+│      test_avg_recall       │     0.8516079783439636     │
+│         test_loss          │     0.5273850560188293     │
+│    test_recall_class_0     │     0.6718662977218628     │
+│ test_recall_class_0_FEMALE │     0.6556745171546936     │
+│  test_recall_class_0_MALE  │     0.688058078289032      │
+│    test_recall_class_1     │     0.9316239356994629     │
+│ test_recall_class_1_FEMALE │     0.9505560398101807     │
+│  test_recall_class_1_MALE  │     0.9126918315887451     │
+│    test_recall_class_2     │     0.9761658906936646     │
+│ test_recall_class_2_FEMALE │     0.9607924222946167     │
+│  test_recall_class_2_MALE  │     0.9915394186973572     │
+│    test_recall_class_3     │     0.8057522177696228     │
+│ test_recall_class_3_FEMALE │     0.8101769685745239     │
+│  test_recall_class_3_MALE  │     0.8013274073600769     │
+│    test_recall_class_4     │     0.8697803020477295     │
+│ test_recall_class_4_FEMALE │     0.894913911819458      │
+│  test_recall_class_4_MALE  │     0.8446467518806458     │
+│    test_recall_class_5     │     0.854459285736084      │
+│ test_recall_class_5_FEMALE │     0.8843047618865967     │
+│  test_recall_class_5_MALE  │     0.8246137499809265     │
+└────────────────────────────┴────────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 454/454 0:01:17 • 0:00:00 5.91it/s  
 wandb: updating run metadata
-wandb: uploading output.log; uploading config.yaml
+wandb: uploading history steps 0-0, summary, console lines 14-48; uploading config.yaml
 wandb: 
 wandb: Run history:
-wandb:               epoch ▁▁▁▁▁▂▂▂▂▂▂▂▃▃▃▃▃▃▄▄▄▄▄▅▅▅▅▅▅▅▆▇▇▇▇▇▇███
-wandb:            test_acc ▁
-wandb:      test_acc_epoch ▁
-wandb:     test_avg_recall ▁
-wandb:           test_loss ▁
-wandb: test_recall_class_0 ▁
-wandb: test_recall_class_1 ▁
-wandb: test_recall_class_2 ▁
-wandb: test_recall_class_3 ▁
-wandb: test_recall_class_4 ▁
-wandb:                  +8 ...
+wandb:                      epoch ▁
+wandb:                   test_acc ▁
+wandb:             test_acc_epoch ▁
+wandb:            test_avg_recall ▁
+wandb:                  test_loss ▁
+wandb:        test_recall_class_0 ▁
+wandb: test_recall_class_0_FEMALE ▁
+wandb:   test_recall_class_0_MALE ▁
+wandb:        test_recall_class_1 ▁
+wandb: test_recall_class_1_FEMALE ▁
+wandb:                        +14 ...
 wandb: 
 wandb: Run summary:
-wandb:               epoch 20
-wandb:            test_acc 0.79166
-wandb:      test_acc_epoch 0.79166
-wandb:     test_avg_recall 0.85161
-wandb:           test_loss 0.52739
-wandb: test_recall_class_0 0.67187
-wandb: test_recall_class_1 0.93162
-wandb: test_recall_class_2 0.97617
-wandb: test_recall_class_3 0.80575
-wandb: test_recall_class_4 0.86978
-wandb:                  +8 ...
+wandb:                      epoch 0
+wandb:                   test_acc 0.79166
+wandb:             test_acc_epoch 0.79166
+wandb:            test_avg_recall 0.85161
+wandb:                  test_loss 0.52739
+wandb:        test_recall_class_0 0.67187
+wandb: test_recall_class_0_FEMALE 0.65567
+wandb:   test_recall_class_0_MALE 0.68806
+wandb:        test_recall_class_1 0.93162
+wandb: test_recall_class_1_FEMALE 0.95056
+wandb:                        +14 ...
 wandb: 
-wandb: 🚀 View run Stereotipical_bias_f0.0 at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/lz61jw44
+wandb: 🚀 View run Stereotipical_bias_f0.0 at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/3fkb39rz
 wandb: ⭐️ View project at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis
-wandb: Synced 5 W&B file(s), 0 media file(s), 8 artifact file(s) and 0 other file(s)
-wandb: Find logs at: wandb/run-20260217_185047-lz61jw44/logs
+wandb: Synced 5 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: wandb/run-20260224_122049-3fkb39rz/logs
 Using 16bit Automatic Mixed Precision (AMP)
+💡 Tip: For seamless cloud uploads and versioning, try installing [litmodels](https://pypi.org/project/litmodels/) to enable LitModelCheckpoint, which syncs automatically with the Lightning model registry.
 GPU available: True (cuda), used: True
 TPU available: False, using: 0 TPU cores
-wandb: setting up run 5hj76s2b
+wandb: setting up run lv93c7oi
 wandb: Tracking run with wandb version 0.24.1
-wandb: Run data is saved locally in wandb/run-20260217_200323-5hj76s2b
+wandb: Run data is saved locally in wandb/run-20260224_122222-lv93c7oi
 wandb: Run `wandb offline` to turn off syncing.
 wandb: Syncing run Stereotipical_bias_f0.25
 wandb: ⭐️ View project at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis
-wandb: 🚀 View run at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/5hj76s2b
-LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/utilities/model_summary/model_summary.py:242: Precision 16-mixed is not supported by the model summary.  Estimated model size in MB will not be accurate. Using 32 bits instead.
-Hiperparámetros del modelo"lr":        0.002
-"n_outputs": 6
-Contingency table: stereotipical, f=0.25
-gender      Female   Male
-temp_label               
-0             7317   7317
-1             7317   7317
-2             3658  10976
-3             7317   7317
-4             7317   7317
-5             7317   7317
-┏━━━┳━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
-┃   ┃ Name                  ┃ Type                      ┃ Params ┃ Mode  ┃ FLOPs ┃
-┡━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
-│ 0 │ model                 │ ResNet                    │ 23.5 M │ train │     0 │
-│ 1 │ loss                  │ CrossEntropyLoss          │      0 │ train │     0 │
-│ 2 │ training_acc          │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 3 │ valid_acc             │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 4 │ test_acc              │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 5 │ conf_matrix           │ MulticlassConfusionMatrix │      0 │ train │     0 │
-│ 6 │ test_recall_per_class │ MulticlassRecall          │      0 │ train │     0 │
-│ 7 │ test_avg_recall       │ MulticlassRecall          │      0 │ train │     0 │
-└───┴───────────────────────┴───────────────────────────┴────────┴───────┴───────┘
-Trainable params: 23.5 M                                                                                                                                                                                                                                
-Non-trainable params: 0                                                                                                                                                                                                                                 
-Total params: 23.5 M                                                                                                                                                                                                                                    
-Total estimated model params size (MB): 94                                                                                                                                                                                                              
-Modules in train mode: 158                                                                                                                                                                                                                              
-Modules in eval mode: 0                                                                                                                                                                                                                                 
-Total FLOPs: 0                                                                                                                                                                                                                                          
-`Trainer.fit` stopped: `max_epochs=20` reached.
-Epoch 19/19 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 343/343 0:02:35 • 0:00:00 2.22it/s v_num: 6s2b train_acc_step: 0.996 val_loss: 1.101 val_acc: 0.799 train_acc_epoch: 0.985
-Restoring states from the checkpoint path at /home/mgutierrez/TFM/checkpoints/Stereotipical_bias_f0.25/best-model-epoch=03-val_loss=0.58.ckpt
+wandb: 🚀 View run at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/lv93c7oi
+Restoring states from the checkpoint path at checkpoints/Stereotipical_bias_f0.25/best-model-epoch=03-val_loss=0.58.ckpt
 /home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/fabric/utilities/cloud_io.py:73: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/trainer/call.py:283: Be aware that when using `ckpt_path`, callbacks used to create the checkpoint need to be provided during `Trainer` instantiation. Please add the following callbacks: ["ModelCheckpoint{'monitor': 'val_loss', 'mode': 'min', 'every_n_train_steps': 0, 'every_n_epochs': 1, 'train_time_interval': None}"].
 LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-Loaded model weights from the checkpoint at /home/mgutierrez/TFM/checkpoints/Stereotipical_bias_f0.25/best-model-epoch=03-val_loss=0.58.ckpt
+Loaded model weights from the checkpoint at checkpoints/Stereotipical_bias_f0.25/best-model-epoch=03-val_loss=0.58.ckpt
+Experiment {'bias_type': 'stereotipical', 'f': 0.0, 'ckpt': 'checkpoints/Stereotipical_bias_f0.0/best-model-epoch=04-val_loss=0.56.ckpt'} finished, going for next one
 Contingency table: stereotipical, f=0.25
 gender      Female   Male
 temp_label               
@@ -766,102 +602,83 @@ tensor([[44393,  2135,    59,  3595,  1061,  2735],
         [  133,    85,     0,  8007,   799,    16],
         [   97,   252,     1,  1012,  8738,     6],
         [ 5238,   491,    17,   742,   218,  4686]], device='cuda:0')
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃        Test metric        ┃       DataLoader 0        ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│         test_acc          │    0.8134862184524536     │
-│      test_acc_epoch       │    0.8134862184524536     │
-│      test_avg_recall      │    0.8018167614936829     │
-│         test_loss         │    0.5269160270690918     │
-│    test_recall_class_0    │    0.8224276304244995     │
-│    test_recall_class_1    │    0.8956897258758545     │
-│    test_recall_class_2    │    0.9310771822929382     │
-│    test_recall_class_3    │    0.8857300877571106     │
-│    test_recall_class_4    │    0.8646348714828491     │
-│    test_recall_class_5    │    0.41134127974510193    │
-└───────────────────────────┴───────────────────────────┘
-Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 454/454 0:01:18 • 0:00:00 5.84it/s  
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric         ┃        DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│          test_acc          │     0.8134862184524536     │
+│       test_acc_epoch       │     0.8134862184524536     │
+│      test_avg_recall       │     0.8018167614936829     │
+│         test_loss          │     0.5269160270690918     │
+│    test_recall_class_0     │     0.8224276304244995     │
+│ test_recall_class_0_FEMALE │     0.8323391079902649     │
+│  test_recall_class_0_MALE  │     0.8125162124633789     │
+│    test_recall_class_1     │     0.8956897258758545     │
+│ test_recall_class_1_FEMALE │     0.9243635535240173     │
+│  test_recall_class_1_MALE  │     0.8670158982276917     │
+│    test_recall_class_2     │     0.9310771822929382     │
+│ test_recall_class_2_FEMALE │     0.9184894561767578     │
+│  test_recall_class_2_MALE  │     0.9436648488044739     │
+│    test_recall_class_3     │     0.8857300877571106     │
+│ test_recall_class_3_FEMALE │     0.8774336576461792     │
+│  test_recall_class_3_MALE  │     0.8940265774726868     │
+│    test_recall_class_4     │     0.8646348714828491     │
+│ test_recall_class_4_FEMALE │     0.8739362955093384     │
+│  test_recall_class_4_MALE  │     0.8553334474563599     │
+│    test_recall_class_5     │    0.41134127974510193     │
+│ test_recall_class_5_FEMALE │    0.41046348214149475     │
+│  test_recall_class_5_MALE  │     0.4122191071510315     │
+└────────────────────────────┴────────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 454/454 0:01:17 • 0:00:00 5.83it/s  
 wandb: updating run metadata
-wandb: uploading output.log; uploading wandb-summary.json; uploading config.yaml
+wandb: uploading config.yaml
 wandb: 
 wandb: Run history:
-wandb:               epoch ▁▁▁▁▁▂▂▃▃▃▃▄▄▄▄▄▄▄▄▄▅▅▅▆▆▆▆▆▆▆▆▇▇▇▇▇████
-wandb:            test_acc ▁
-wandb:      test_acc_epoch ▁
-wandb:     test_avg_recall ▁
-wandb:           test_loss ▁
-wandb: test_recall_class_0 ▁
-wandb: test_recall_class_1 ▁
-wandb: test_recall_class_2 ▁
-wandb: test_recall_class_3 ▁
-wandb: test_recall_class_4 ▁
-wandb:                  +8 ...
+wandb:                      epoch ▁
+wandb:                   test_acc ▁
+wandb:             test_acc_epoch ▁
+wandb:            test_avg_recall ▁
+wandb:                  test_loss ▁
+wandb:        test_recall_class_0 ▁
+wandb: test_recall_class_0_FEMALE ▁
+wandb:   test_recall_class_0_MALE ▁
+wandb:        test_recall_class_1 ▁
+wandb: test_recall_class_1_FEMALE ▁
+wandb:                        +14 ...
 wandb: 
 wandb: Run summary:
-wandb:               epoch 20
-wandb:            test_acc 0.81349
-wandb:      test_acc_epoch 0.81349
-wandb:     test_avg_recall 0.80182
-wandb:           test_loss 0.52692
-wandb: test_recall_class_0 0.82243
-wandb: test_recall_class_1 0.89569
-wandb: test_recall_class_2 0.93108
-wandb: test_recall_class_3 0.88573
-wandb: test_recall_class_4 0.86463
-wandb:                  +8 ...
+wandb:                      epoch 0
+wandb:                   test_acc 0.81349
+wandb:             test_acc_epoch 0.81349
+wandb:            test_avg_recall 0.80182
+wandb:                  test_loss 0.52692
+wandb:        test_recall_class_0 0.82243
+wandb: test_recall_class_0_FEMALE 0.83234
+wandb:   test_recall_class_0_MALE 0.81252
+wandb:        test_recall_class_1 0.89569
+wandb: test_recall_class_1_FEMALE 0.92436
+wandb:                        +14 ...
 wandb: 
-wandb: 🚀 View run Stereotipical_bias_f0.25 at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/5hj76s2b
+wandb: 🚀 View run Stereotipical_bias_f0.25 at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/lv93c7oi
 wandb: ⭐️ View project at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis
-wandb: Synced 5 W&B file(s), 0 media file(s), 8 artifact file(s) and 0 other file(s)
-wandb: Find logs at: wandb/run-20260217_200323-5hj76s2b/logs
+wandb: Synced 5 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: wandb/run-20260224_122222-lv93c7oi/logs
 Using 16bit Automatic Mixed Precision (AMP)
+💡 Tip: For seamless cloud uploads and versioning, try installing [litmodels](https://pypi.org/project/litmodels/) to enable LitModelCheckpoint, which syncs automatically with the Lightning model registry.
 GPU available: True (cuda), used: True
 TPU available: False, using: 0 TPU cores
-wandb: setting up run cf2frp23
+wandb: setting up run 4yuurauq
 wandb: Tracking run with wandb version 0.24.1
-wandb: Run data is saved locally in wandb/run-20260217_211547-cf2frp23
+wandb: Run data is saved locally in wandb/run-20260224_122355-4yuurauq
 wandb: Run `wandb offline` to turn off syncing.
 wandb: Syncing run Stereotipical_bias_f0.5
 wandb: ⭐️ View project at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis
-wandb: 🚀 View run at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/cf2frp23
-LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/utilities/model_summary/model_summary.py:242: Precision 16-mixed is not supported by the model summary.  Estimated model size in MB will not be accurate. Using 32 bits instead.
-Hiperparámetros del modelo"lr":        0.002
-"n_outputs": 6
-Contingency table: stereotipical, f=0.5
-gender      Female  Male
-temp_label              
-0             7317  7317
-1             7317  7317
-2             7317  7317
-3             7317  7317
-4             7317  7317
-5             7317  7317
-┏━━━┳━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
-┃   ┃ Name                  ┃ Type                      ┃ Params ┃ Mode  ┃ FLOPs ┃
-┡━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
-│ 0 │ model                 │ ResNet                    │ 23.5 M │ train │     0 │
-│ 1 │ loss                  │ CrossEntropyLoss          │      0 │ train │     0 │
-│ 2 │ training_acc          │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 3 │ valid_acc             │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 4 │ test_acc              │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 5 │ conf_matrix           │ MulticlassConfusionMatrix │      0 │ train │     0 │
-│ 6 │ test_recall_per_class │ MulticlassRecall          │      0 │ train │     0 │
-│ 7 │ test_avg_recall       │ MulticlassRecall          │      0 │ train │     0 │
-└───┴───────────────────────┴───────────────────────────┴────────┴───────┴───────┘
-Trainable params: 23.5 M                                                                                                                                                                                                                                
-Non-trainable params: 0                                                                                                                                                                                                                                 
-Total params: 23.5 M                                                                                                                                                                                                                                    
-Total estimated model params size (MB): 94                                                                                                                                                                                                              
-Modules in train mode: 158                                                                                                                                                                                                                              
-Modules in eval mode: 0                                                                                                                                                                                                                                 
-Total FLOPs: 0                                                                                                                                                                                                                                          
-`Trainer.fit` stopped: `max_epochs=20` reached.
-Epoch 19/19 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 343/343 0:02:35 • 0:00:00 2.22it/s v_num: rp23 train_acc_step: 0.988 val_loss: 0.761 val_acc: 0.836 train_acc_epoch: 0.987
-Restoring states from the checkpoint path at /home/mgutierrez/TFM/checkpoints/Stereotipical_bias_f0.5/best-model-epoch=05-val_loss=0.47.ckpt
+wandb: 🚀 View run at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/4yuurauq
+Restoring states from the checkpoint path at checkpoints/Stereotipical_bias_f0.5/best-model-epoch=05-val_loss=0.47.ckpt
 /home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/fabric/utilities/cloud_io.py:73: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/trainer/call.py:283: Be aware that when using `ckpt_path`, callbacks used to create the checkpoint need to be provided during `Trainer` instantiation. Please add the following callbacks: ["ModelCheckpoint{'monitor': 'val_loss', 'mode': 'min', 'every_n_train_steps': 0, 'every_n_epochs': 1, 'train_time_interval': None}"].
 LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-Loaded model weights from the checkpoint at /home/mgutierrez/TFM/checkpoints/Stereotipical_bias_f0.5/best-model-epoch=05-val_loss=0.47.ckpt
+Loaded model weights from the checkpoint at checkpoints/Stereotipical_bias_f0.5/best-model-epoch=05-val_loss=0.47.ckpt
+Experiment {'bias_type': 'stereotipical', 'f': 0.25, 'ckpt': 'checkpoints/Stereotipical_bias_f0.25/best-model-epoch=03-val_loss=0.58.ckpt'} finished, going for next one
 Contingency table: stereotipical, f=0.5
 gender      Female   Male
 temp_label               
@@ -879,102 +696,83 @@ tensor([[43567,  1133,   281,  1169,   609,  7219],
         [  493,   185,     1,  7256,   876,   229],
         [  131,   345,     0,   258,  9329,    43],
         [ 2516,   148,     8,   213,    86,  8421]], device='cuda:0')
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃        Test metric        ┃       DataLoader 0        ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│         test_acc          │    0.8465551137924194     │
-│      test_acc_epoch       │    0.8465551137924194     │
-│      test_avg_recall      │    0.8621148467063904     │
-│         test_loss         │    0.42184141278266907    │
-│    test_recall_class_0    │    0.8071251511573792     │
-│    test_recall_class_1    │    0.9263854622840881     │
-│    test_recall_class_2    │    0.9742055535316467     │
-│    test_recall_class_3    │    0.8026548624038696     │
-│    test_recall_class_4    │    0.9231149554252625     │
-│    test_recall_class_5    │    0.7392029762268066     │
-└───────────────────────────┴───────────────────────────┘
-Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 454/454 0:01:18 • 0:00:00 5.82it/s  
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric         ┃        DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│          test_acc          │     0.8465551137924194     │
+│       test_acc_epoch       │     0.8465551137924194     │
+│      test_avg_recall       │     0.8621148467063904     │
+│         test_loss          │    0.42184141278266907     │
+│    test_recall_class_0     │     0.8071251511573792     │
+│ test_recall_class_0_FEMALE │     0.804031252861023      │
+│  test_recall_class_0_MALE  │     0.8102189898490906     │
+│    test_recall_class_1     │     0.9263854622840881     │
+│ test_recall_class_1_FEMALE │     0.9342891573905945     │
+│  test_recall_class_1_MALE  │     0.9184817671775818     │
+│    test_recall_class_2     │     0.9742055535316467     │
+│ test_recall_class_2_FEMALE │     0.9733800888061523     │
+│  test_recall_class_2_MALE  │     0.9750309586524963     │
+│    test_recall_class_3     │     0.8026548624038696     │
+│ test_recall_class_3_FEMALE │     0.8026548624038696     │
+│  test_recall_class_3_MALE  │     0.8026548624038696     │
+│    test_recall_class_4     │     0.9231149554252625     │
+│ test_recall_class_4_FEMALE │     0.9202454090118408     │
+│  test_recall_class_4_MALE  │     0.9259845614433289     │
+│    test_recall_class_5     │     0.7392029762268066     │
+│ test_recall_class_5_FEMALE │     0.7559691071510315     │
+│  test_recall_class_5_MALE  │     0.722436785697937      │
+└────────────────────────────┴────────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 454/454 0:01:17 • 0:00:00 5.78it/s  
 wandb: updating run metadata
-wandb: uploading output.log; uploading wandb-summary.json; uploading config.yaml
+wandb: uploading config.yaml
 wandb: 
 wandb: Run history:
-wandb:               epoch ▁▁▁▁▁▁▂▂▂▂▃▃▃▄▄▄▄▄▅▅▅▅▅▅▅▆▆▆▆▆▆▇▇▇▇▇▇▇▇█
-wandb:            test_acc ▁
-wandb:      test_acc_epoch ▁
-wandb:     test_avg_recall ▁
-wandb:           test_loss ▁
-wandb: test_recall_class_0 ▁
-wandb: test_recall_class_1 ▁
-wandb: test_recall_class_2 ▁
-wandb: test_recall_class_3 ▁
-wandb: test_recall_class_4 ▁
-wandb:                  +8 ...
+wandb:                      epoch ▁
+wandb:                   test_acc ▁
+wandb:             test_acc_epoch ▁
+wandb:            test_avg_recall ▁
+wandb:                  test_loss ▁
+wandb:        test_recall_class_0 ▁
+wandb: test_recall_class_0_FEMALE ▁
+wandb:   test_recall_class_0_MALE ▁
+wandb:        test_recall_class_1 ▁
+wandb: test_recall_class_1_FEMALE ▁
+wandb:                        +14 ...
 wandb: 
 wandb: Run summary:
-wandb:               epoch 20
-wandb:            test_acc 0.84656
-wandb:      test_acc_epoch 0.84656
-wandb:     test_avg_recall 0.86211
-wandb:           test_loss 0.42184
-wandb: test_recall_class_0 0.80713
-wandb: test_recall_class_1 0.92639
-wandb: test_recall_class_2 0.97421
-wandb: test_recall_class_3 0.80265
-wandb: test_recall_class_4 0.92311
-wandb:                  +8 ...
+wandb:                      epoch 0
+wandb:                   test_acc 0.84656
+wandb:             test_acc_epoch 0.84656
+wandb:            test_avg_recall 0.86211
+wandb:                  test_loss 0.42184
+wandb:        test_recall_class_0 0.80713
+wandb: test_recall_class_0_FEMALE 0.80403
+wandb:   test_recall_class_0_MALE 0.81022
+wandb:        test_recall_class_1 0.92639
+wandb: test_recall_class_1_FEMALE 0.93429
+wandb:                        +14 ...
 wandb: 
-wandb: 🚀 View run Stereotipical_bias_f0.5 at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/cf2frp23
+wandb: 🚀 View run Stereotipical_bias_f0.5 at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/4yuurauq
 wandb: ⭐️ View project at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis
-wandb: Synced 5 W&B file(s), 0 media file(s), 8 artifact file(s) and 0 other file(s)
-wandb: Find logs at: wandb/run-20260217_211547-cf2frp23/logs
+wandb: Synced 5 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: wandb/run-20260224_122355-4yuurauq/logs
 Using 16bit Automatic Mixed Precision (AMP)
+💡 Tip: For seamless cloud uploads and versioning, try installing [litmodels](https://pypi.org/project/litmodels/) to enable LitModelCheckpoint, which syncs automatically with the Lightning model registry.
 GPU available: True (cuda), used: True
 TPU available: False, using: 0 TPU cores
-wandb: setting up run 4qj8dgoc
+wandb: setting up run fo5938ob
 wandb: Tracking run with wandb version 0.24.1
-wandb: Run data is saved locally in wandb/run-20260217_222810-4qj8dgoc
+wandb: Run data is saved locally in wandb/run-20260224_122527-fo5938ob
 wandb: Run `wandb offline` to turn off syncing.
 wandb: Syncing run Stereotipical_bias_f0.75
 wandb: ⭐️ View project at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis
-wandb: 🚀 View run at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/4qj8dgoc
-LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/utilities/model_summary/model_summary.py:242: Precision 16-mixed is not supported by the model summary.  Estimated model size in MB will not be accurate. Using 32 bits instead.
-Hiperparámetros del modelo"lr":        0.002
-"n_outputs": 6
-Contingency table: stereotipical, f=0.75
-gender      Female  Male
-temp_label              
-0             7317  7317
-1             7317  7317
-2            10975  3659
-3             7317  7317
-4             7317  7317
-5             7317  7317
-┏━━━┳━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
-┃   ┃ Name                  ┃ Type                      ┃ Params ┃ Mode  ┃ FLOPs ┃
-┡━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
-│ 0 │ model                 │ ResNet                    │ 23.5 M │ train │     0 │
-│ 1 │ loss                  │ CrossEntropyLoss          │      0 │ train │     0 │
-│ 2 │ training_acc          │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 3 │ valid_acc             │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 4 │ test_acc              │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 5 │ conf_matrix           │ MulticlassConfusionMatrix │      0 │ train │     0 │
-│ 6 │ test_recall_per_class │ MulticlassRecall          │      0 │ train │     0 │
-│ 7 │ test_avg_recall       │ MulticlassRecall          │      0 │ train │     0 │
-└───┴───────────────────────┴───────────────────────────┴────────┴───────┴───────┘
-Trainable params: 23.5 M                                                                                                                                                                                                                                
-Non-trainable params: 0                                                                                                                                                                                                                                 
-Total params: 23.5 M                                                                                                                                                                                                                                    
-Total estimated model params size (MB): 94                                                                                                                                                                                                              
-Modules in train mode: 158                                                                                                                                                                                                                              
-Modules in eval mode: 0                                                                                                                                                                                                                                 
-Total FLOPs: 0                                                                                                                                                                                                                                          
-`Trainer.fit` stopped: `max_epochs=20` reached.
-Epoch 19/19 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 343/343 0:02:35 • 0:00:00 2.22it/s v_num: dgoc train_acc_step: 0.988 val_loss: 0.806 val_acc: 0.840 train_acc_epoch: 0.986
-Restoring states from the checkpoint path at /home/mgutierrez/TFM/checkpoints/Stereotipical_bias_f0.75/best-model-epoch=06-val_loss=0.47.ckpt
+wandb: 🚀 View run at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/fo5938ob
+Restoring states from the checkpoint path at checkpoints/Stereotipical_bias_f0.75/best-model-epoch=06-val_loss=0.47.ckpt
 /home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/fabric/utilities/cloud_io.py:73: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/trainer/call.py:283: Be aware that when using `ckpt_path`, callbacks used to create the checkpoint need to be provided during `Trainer` instantiation. Please add the following callbacks: ["ModelCheckpoint{'monitor': 'val_loss', 'mode': 'min', 'every_n_train_steps': 0, 'every_n_epochs': 1, 'train_time_interval': None}"].
 LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-Loaded model weights from the checkpoint at /home/mgutierrez/TFM/checkpoints/Stereotipical_bias_f0.75/best-model-epoch=06-val_loss=0.47.ckpt
+Loaded model weights from the checkpoint at checkpoints/Stereotipical_bias_f0.75/best-model-epoch=06-val_loss=0.47.ckpt
+Experiment {'bias_type': 'stereotipical', 'f': 0.5, 'ckpt': 'checkpoints/Stereotipical_bias_f0.5/best-model-epoch=05-val_loss=0.47.ckpt'} finished, going for next one
 Contingency table: stereotipical, f=0.75
 gender      Female   Male
 temp_label               
@@ -992,102 +790,83 @@ tensor([[43977,  2620,   252,  1286,   321,  5522],
         [  345,   408,     2,  7717,   463,   105],
         [  141,   521,     0,   499,  8895,    50],
         [ 2634,   459,    21,   242,    37,  7999]], device='cuda:0')
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃        Test metric        ┃       DataLoader 0        ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│         test_acc          │    0.8536000847816467     │
-│      test_acc_epoch       │    0.8536000847816467     │
-│      test_avg_recall      │    0.8643761277198792     │
-│         test_loss         │    0.43825817108154297    │
-│    test_recall_class_0    │    0.8147208094596863     │
-│    test_recall_class_1    │    0.9647550582885742     │
-│    test_recall_class_2    │    0.9708006381988525     │
-│    test_recall_class_3    │    0.8536504507064819     │
-│    test_recall_class_4    │    0.8801701664924622     │
-│    test_recall_class_5    │    0.7021594047546387     │
-└───────────────────────────┴───────────────────────────┘
-Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 454/454 0:01:18 • 0:00:00 5.85it/s  
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric         ┃        DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│          test_acc          │     0.8536000847816467     │
+│       test_acc_epoch       │     0.8536000847816467     │
+│      test_avg_recall       │     0.8643761277198792     │
+│         test_loss          │    0.43825817108154297     │
+│    test_recall_class_0     │     0.8147208094596863     │
+│ test_recall_class_0_FEMALE │     0.8154803514480591     │
+│  test_recall_class_0_MALE  │     0.8139612674713135     │
+│    test_recall_class_1     │     0.9647550582885742     │
+│ test_recall_class_1_FEMALE │     0.9774836897850037     │
+│  test_recall_class_1_MALE  │     0.9520264863967896     │
+│    test_recall_class_2     │     0.9708006381988525     │
+│ test_recall_class_2_FEMALE │     0.9775072336196899     │
+│  test_recall_class_2_MALE  │     0.9640941023826599     │
+│    test_recall_class_3     │     0.8536504507064819     │
+│ test_recall_class_3_FEMALE │     0.8325220942497253     │
+│  test_recall_class_3_MALE  │     0.8747787475585938     │
+│    test_recall_class_4     │     0.8801701664924622     │
+│ test_recall_class_4_FEMALE │     0.9008509516716003     │
+│  test_recall_class_4_MALE  │     0.8594894409179688     │
+│    test_recall_class_5     │     0.7021594047546387     │
+│ test_recall_class_5_FEMALE │     0.7250702381134033     │
+│  test_recall_class_5_MALE  │     0.679248571395874      │
+└────────────────────────────┴────────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 454/454 0:01:19 • 0:00:00 5.57it/s  
 wandb: updating run metadata
-wandb: uploading output.log; uploading wandb-summary.json; uploading config.yaml
+wandb: uploading config.yaml
 wandb: 
 wandb: Run history:
-wandb:               epoch ▁▁▂▂▂▂▂▃▃▃▄▄▄▄▄▄▄▄▄▅▅▅▅▅▆▆▆▆▆▆▇▇▇▇▇▇▇███
-wandb:            test_acc ▁
-wandb:      test_acc_epoch ▁
-wandb:     test_avg_recall ▁
-wandb:           test_loss ▁
-wandb: test_recall_class_0 ▁
-wandb: test_recall_class_1 ▁
-wandb: test_recall_class_2 ▁
-wandb: test_recall_class_3 ▁
-wandb: test_recall_class_4 ▁
-wandb:                  +8 ...
+wandb:                      epoch ▁
+wandb:                   test_acc ▁
+wandb:             test_acc_epoch ▁
+wandb:            test_avg_recall ▁
+wandb:                  test_loss ▁
+wandb:        test_recall_class_0 ▁
+wandb: test_recall_class_0_FEMALE ▁
+wandb:   test_recall_class_0_MALE ▁
+wandb:        test_recall_class_1 ▁
+wandb: test_recall_class_1_FEMALE ▁
+wandb:                        +14 ...
 wandb: 
 wandb: Run summary:
-wandb:               epoch 20
-wandb:            test_acc 0.8536
-wandb:      test_acc_epoch 0.8536
-wandb:     test_avg_recall 0.86438
-wandb:           test_loss 0.43826
-wandb: test_recall_class_0 0.81472
-wandb: test_recall_class_1 0.96476
-wandb: test_recall_class_2 0.9708
-wandb: test_recall_class_3 0.85365
-wandb: test_recall_class_4 0.88017
-wandb:                  +8 ...
+wandb:                      epoch 0
+wandb:                   test_acc 0.8536
+wandb:             test_acc_epoch 0.8536
+wandb:            test_avg_recall 0.86438
+wandb:                  test_loss 0.43826
+wandb:        test_recall_class_0 0.81472
+wandb: test_recall_class_0_FEMALE 0.81548
+wandb:   test_recall_class_0_MALE 0.81396
+wandb:        test_recall_class_1 0.96476
+wandb: test_recall_class_1_FEMALE 0.97748
+wandb:                        +14 ...
 wandb: 
-wandb: 🚀 View run Stereotipical_bias_f0.75 at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/4qj8dgoc
+wandb: 🚀 View run Stereotipical_bias_f0.75 at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/fo5938ob
 wandb: ⭐️ View project at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis
-wandb: Synced 5 W&B file(s), 0 media file(s), 8 artifact file(s) and 0 other file(s)
-wandb: Find logs at: wandb/run-20260217_222810-4qj8dgoc/logs
+wandb: Synced 5 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: wandb/run-20260224_122527-fo5938ob/logs
 Using 16bit Automatic Mixed Precision (AMP)
+💡 Tip: For seamless cloud uploads and versioning, try installing [litmodels](https://pypi.org/project/litmodels/) to enable LitModelCheckpoint, which syncs automatically with the Lightning model registry.
 GPU available: True (cuda), used: True
 TPU available: False, using: 0 TPU cores
-wandb: setting up run n2375fko
+wandb: setting up run jeb4otwh
 wandb: Tracking run with wandb version 0.24.1
-wandb: Run data is saved locally in wandb/run-20260217_234035-n2375fko
+wandb: Run data is saved locally in wandb/run-20260224_122702-jeb4otwh
 wandb: Run `wandb offline` to turn off syncing.
 wandb: Syncing run Stereotipical_bias_f1.0
 wandb: ⭐️ View project at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis
-wandb: 🚀 View run at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/n2375fko
-LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/utilities/model_summary/model_summary.py:242: Precision 16-mixed is not supported by the model summary.  Estimated model size in MB will not be accurate. Using 32 bits instead.
-Hiperparámetros del modelo"lr":        0.002
-"n_outputs": 6
-Contingency table: stereotipical, f=1.0
-gender      Female  Male
-temp_label              
-0             7317  7317
-1             7317  7317
-2            14634     0
-3             7317  7317
-4             7317  7317
-5             7317  7317
-┏━━━┳━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
-┃   ┃ Name                  ┃ Type                      ┃ Params ┃ Mode  ┃ FLOPs ┃
-┡━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
-│ 0 │ model                 │ ResNet                    │ 23.5 M │ train │     0 │
-│ 1 │ loss                  │ CrossEntropyLoss          │      0 │ train │     0 │
-│ 2 │ training_acc          │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 3 │ valid_acc             │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 4 │ test_acc              │ MulticlassAccuracy        │      0 │ train │     0 │
-│ 5 │ conf_matrix           │ MulticlassConfusionMatrix │      0 │ train │     0 │
-│ 6 │ test_recall_per_class │ MulticlassRecall          │      0 │ train │     0 │
-│ 7 │ test_avg_recall       │ MulticlassRecall          │      0 │ train │     0 │
-└───┴───────────────────────┴───────────────────────────┴────────┴───────┴───────┘
-Trainable params: 23.5 M                                                                                                                                                                                                                                
-Non-trainable params: 0                                                                                                                                                                                                                                 
-Total params: 23.5 M                                                                                                                                                                                                                                    
-Total estimated model params size (MB): 94                                                                                                                                                                                                              
-Modules in train mode: 158                                                                                                                                                                                                                              
-Modules in eval mode: 0                                                                                                                                                                                                                                 
-Total FLOPs: 0                                                                                                                                                                                                                                          
-`Trainer.fit` stopped: `max_epochs=20` reached.
-Epoch 19/19 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 343/343 0:02:35 • 0:00:00 2.22it/s v_num: 5fko train_acc_step: 0.992 val_loss: 0.813 val_acc: 0.837 train_acc_epoch: 0.986
-Restoring states from the checkpoint path at /home/mgutierrez/TFM/checkpoints/Stereotipical_bias_f1.0/best-model-epoch=06-val_loss=0.68.ckpt
+wandb: 🚀 View run at https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/jeb4otwh
+Restoring states from the checkpoint path at checkpoints/Stereotipical_bias_f1.0/best-model-epoch=06-val_loss=0.68.ckpt
 /home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/fabric/utilities/cloud_io.py:73: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+/home/mgutierrez/miniconda3/envs/tfm/lib/python3.10/site-packages/lightning/pytorch/trainer/call.py:283: Be aware that when using `ckpt_path`, callbacks used to create the checkpoint need to be provided during `Trainer` instantiation. Please add the following callbacks: ["ModelCheckpoint{'monitor': 'val_loss', 'mode': 'min', 'every_n_train_steps': 0, 'every_n_epochs': 1, 'train_time_interval': None}"].
 LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-Loaded model weights from the checkpoint at /home/mgutierrez/TFM/checkpoints/Stereotipical_bias_f1.0/best-model-epoch=06-val_loss=0.68.ckpt
+Loaded model weights from the checkpoint at checkpoints/Stereotipical_bias_f1.0/best-model-epoch=06-val_loss=0.68.ckpt
+Experiment {'bias_type': 'stereotipical', 'f': 0.75, 'ckpt': 'checkpoints/Stereotipical_bias_f0.75/best-model-epoch=06-val_loss=0.47.ckpt'} finished, going for next one
 Contingency table: stereotipical, f=1.0
 gender      Female   Male
 temp_label               
@@ -1097,59 +876,3 @@ temp_label
 3             4520   4520
 4             5053   5053
 5             5696   5696
-Matrix de confusión
-
-tensor([[39712,  4433,  1085,   801,  1025,  6922],
-        [  236, 21056,   186,    48,   179,    57],
-        [  172,   132,  9320,     9,    12,    47],
-        [  500,   872,     0,  6378,  1025,   265],
-        [   97,   606,     2,   235,  9118,    48],
-        [ 3002,   711,    38,   115,   153,  7373]], device='cuda:0')
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃        Test metric        ┃       DataLoader 0        ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│         test_acc          │    0.8015607595443726     │
-│      test_acc_epoch       │    0.8015607595443726     │
-│      test_avg_recall      │    0.8199765086174011     │
-│         test_loss         │    0.6117643713951111     │
-│    test_recall_class_0    │     0.73570716381073      │
-│    test_recall_class_1    │    0.9675581455230713     │
-│    test_recall_class_2    │    0.9616178274154663     │
-│    test_recall_class_3    │    0.7055310010910034     │
-│    test_recall_class_4    │     0.90223628282547      │
-│    test_recall_class_5    │     0.647208571434021     │
-└───────────────────────────┴───────────────────────────┘
-Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 454/454 0:01:18 • 0:00:00 5.84it/s  
-wandb: updating run metadata
-wandb: uploading wandb-summary.json; uploading config.yaml
-wandb: 
-wandb: Run history:
-wandb:               epoch ▁▁▁▂▂▂▂▂▂▂▂▂▃▃▃▃▃▄▄▄▄▄▅▅▅▅▆▆▆▆▇▇▇▇▇▇▇▇██
-wandb:            test_acc ▁
-wandb:      test_acc_epoch ▁
-wandb:     test_avg_recall ▁
-wandb:           test_loss ▁
-wandb: test_recall_class_0 ▁
-wandb: test_recall_class_1 ▁
-wandb: test_recall_class_2 ▁
-wandb: test_recall_class_3 ▁
-wandb: test_recall_class_4 ▁
-wandb:                  +8 ...
-wandb: 
-wandb: Run summary:
-wandb:               epoch 20
-wandb:            test_acc 0.80156
-wandb:      test_acc_epoch 0.80156
-wandb:     test_avg_recall 0.81998
-wandb:           test_loss 0.61176
-wandb: test_recall_class_0 0.73571
-wandb: test_recall_class_1 0.96756
-wandb: test_recall_class_2 0.96162
-wandb: test_recall_class_3 0.70553
-wandb: test_recall_class_4 0.90224
-wandb:                  +8 ...
-wandb: 
-wandb: 🚀 View run Stereotipical_bias_f1.0 at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis/runs/n2375fko
-wandb: ⭐️ View project at: https://wandb.ai/mariogutierrezlopez-upm/MultiPIE-Bias-Analysis
-wandb: Synced 5 W&B file(s), 0 media file(s), 8 artifact file(s) and 0 other file(s)
-wandb: Find logs at: wandb/run-20260217_234035-n2375fko/logs
