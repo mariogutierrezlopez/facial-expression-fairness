@@ -14,8 +14,8 @@ import wandb
 # CONFIGURACION
 DATA_DIR = "/home12TB1/database/recognition/faces/MultiPie/data/"
 CSV_PATH = "/home12TB1/database/recognition/faces/MultiPie/demographic_info_cropped.csv"
-LEARNING_RATE = 2e-3
-BATCH_SIZE = 256
+LEARNING_RATE = 1e-4
+BATCH_SIZE = 32
 NUM_WORKERS = 12
 MAX_EPOCHS = 20
 N_OUTPUTS = 6
@@ -43,7 +43,7 @@ def run_experiment(exp_name, bias_type, bias_factor, n_limit, target_class=None)
 
     logger = WandbLogger(
         name=exp_name,
-        project="MultiPIE-Bias-Analysis",
+        project="MultiPIE-Bias-Analysis_Hito2",
         log_model="all",
     )
 
@@ -51,11 +51,11 @@ def run_experiment(exp_name, bias_type, bias_factor, n_limit, target_class=None)
     
     checkpoint_dir = f"checkpoints/{exp_name}/"
     checkpoint_callback = ModelCheckpoint(
-        monitor="val_loss",
-        mode="min",
+        monitor="val_recall_macro",
+        mode="max",
         save_top_k=1,
         dirpath=checkpoint_dir,
-        filename="best-model-{epoch:02d}-{val_loss:.2f}"
+        filename="best-model-{epoch:02d}-{val_recall_macro:.2f}"
     )
 
     trainer = L.Trainer(

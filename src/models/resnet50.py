@@ -9,6 +9,7 @@ from torchvision import models
 import torchmetrics
 from torchmetrics import ConfusionMatrix
 import torch
+from torch.optim.lr_scheduler import OneCycleLR
 
 class ResNet50(L.LightningModule):
 
@@ -39,8 +40,8 @@ class ResNet50(L.LightningModule):
         #Conf matrix
         self.conf_matrix = ConfusionMatrix(num_classes=self.n_outputs, task="multiclass")
         #Recall metrics
-        self.test_recall_per_class = torchmetrics.Recall(num_classes=self.n_outputs, task="multiclass", average=None)
-        self.test_avg_recall = torchmetrics.Recall(num_classes=self.n_outputs, task="multiclass", average="macro")
+        self.recall_per_class = torchmetrics.Recall(num_classes=self.n_outputs, task="multiclass", average=None)
+        self.avg_recall = torchmetrics.Recall(num_classes=self.n_outputs, task="multiclass", average="macro")
 
         # Demographic evaluation
         self.test_step_outputs = []
@@ -63,6 +64,9 @@ class ResNet50(L.LightningModule):
         logits = self(x)
         l = self.loss(logits, y)
         acc = self.valid_acc(logits, y)
+        recall = self.avg_recall(logits, y)
+
+        self.log("val_recall_macro", recall, on_epoch=True, prog_bar=True)
         self.log("val_loss", l, on_step=False, on_epoch=True, prog_bar=True)
         self.log("val_acc", acc, on_step=False, on_epoch=True, prog_bar=True)
     
@@ -87,8 +91,8 @@ class ResNet50(L.LightningModule):
         self.log("test_acc", acc, on_step=False, on_epoch=True, prog_bar=True)
 
         # COMPUTE METRICS
-        self.test_recall_per_class.update(logits, y)
-        self.test_avg_recall.update(logits, y)
+        self.recall_per_class.update(logits, y)
+        self.avg_recall.update(logits, y)
         self.conf_matrix.update(logits, y)
 
     def on_test_epoch_end(self):
@@ -101,8 +105,8 @@ class ResNet50(L.LightningModule):
         print(self.conf_matrix.compute())
 
         #OUTPUT RECALL METRICS
-        per_class = self.test_recall_per_class.compute()
-        avg_recall = self.test_avg_recall.compute()
+        per_class = self.recall_per_class.compute()
+        avg_recall = self.avg_recall.compute()
 
         self.log("test_avg_recall", avg_recall)
         for i, recall_val in enumerate(per_class):
@@ -143,9 +147,29 @@ class ResNet50(L.LightningModule):
         
         #RESET METRICS
         self.conf_matrix.reset()
-        self.test_avg_recall.reset()
-        self.test_recall_per_class.reset()
+        self.avg_recall.reset()
+        self.recall_per_class.reset()
 
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=self.lr)
-        return optimizer
+
+        total_steps = self.trainer.estimated_stepping_batches
+
+        scheduler = OneCycleLR(
+            optimizer=optimizer,
+            max_lr=self.lr,
+            total_steps=total_steps,
+            pct_start=0.3,
+            anneal_strategy='cos',
+            div_factor=25.0,
+            final_div_factor=1e4
+        )
+
+        return {
+            "optimizer": optimizer,
+            "lr_scheduler": {
+                "scheduler": scheduler,
+                "interval": "step",
+                "frequency": 1
+            }
+        }
