@@ -83,23 +83,10 @@ if __name__ == "__main__":
     global_n_limit = min(n_limit_repres, n_limit_stereo)
     print(f"N_limit global para ambos: {global_n_limit}")
     
-    # SESGOS REPRESENTACIONALES
-    # print("Analizando sesgos representacionales")
-    # for f in BIAS_FACTORS:
-    #     print(f"Probando experimentos con f={f}")
-    #     run_experiment(
-    #         exp_name=f"Repres_bias_f{f}",
-    #         bias_type="representational",
-    #         bias_factor=f,
-    #         n_limit=n_limit_repres
-    #     )
-    #     wandb.finish()
-
-    #SESGOS ESTEREOTÍPICOS
     print("Analizando sesgos estereotípicos")
 
     # TARGET_CLASS_ID = 3
-    TARGET_CLASS_IDS = [0,1,4,5]
+    TARGET_CLASS_IDS = [0,1,2,3,4,5]
     for target_id in TARGET_CLASS_IDS:
         for f in BIAS_FACTORS:
             run_experiment(
