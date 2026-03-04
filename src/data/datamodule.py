@@ -75,7 +75,8 @@ class MultiPIEDataModule(L.LightningDataModule):
 
             raw_train_df = full_df[full_df['subject_id'].isin(train_subs['subject_id'])]
             train_df = self._apply_experiment_bias(raw_train_df)
-            self._print_contingency_table(train_df, filename=f"dataset_logs_fase2/train_dist_{self.bias_type}_f{self.bias_factor}.csv")
+
+            self._print_contingency_table(train_df, stage_name="train")
 
             raw_val_df = full_df[full_df['subject_id'].isin(val_subs['subject_id'])]
             val_df = self._apply_balanced_evaluation(raw_val_df)
@@ -87,7 +88,7 @@ class MultiPIEDataModule(L.LightningDataModule):
 
             raw_test_df = full_df[full_df['subject_id'].isin(test_subs['subject_id'])]
             test_df = self._apply_balanced_evaluation(raw_test_df)
-            self._print_contingency_table(test_df, filename=f"dataset_logs_fase2/test_dist_{self.bias_type}_f{self.bias_factor}.csv")
+            self._print_contingency_table(test_df, stage_name="test")
             self.test_ds = MultiPIEDataset(self.data_dir, df=test_df, transform=transform)
 
     # FUNCION PARA OBTENER DATASET BALANCEADO CON LA CLASE MAS BAJA
@@ -206,17 +207,16 @@ class MultiPIEDataModule(L.LightningDataModule):
         return pd.concat(final_dfs).sample(frac=1, random_state=42).reset_index(drop=True)
     
     # Print para ver los parámetros del experimento y la tabla con los géneros y labels
-    def _print_contingency_table(self, df, filename=""):
+    def _print_contingency_table(self, df, stage_name="train"):
         print(f"Contingency table: {self.bias_type}, f={self.bias_factor}")
         ct = pd.crosstab(df['temp_label'], df['gender'])
         print(ct)
 
         # Guardar tabla en un csv
-        log_dir = "dataset_logs_fase2"
+        log_dir = f"dataset_logs_fase2-c{self.target_class}"
         os.makedirs(log_dir, exist_ok=True)
 
-        if filename == "":
-            filename = f"{log_dir}/train_dist_{self.bias_type}_f{self.bias_factor}.csv"
+        filename = f"{log_dir}/{stage_name}_dist_{self.bias_type}_f{self.bias_factor}.csv"
 
         ct.to_csv(filename)
     

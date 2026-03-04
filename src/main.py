@@ -43,7 +43,7 @@ def run_experiment(exp_name, bias_type, bias_factor, n_limit, target_class=None)
 
     logger = WandbLogger(
         name=exp_name,
-        project="MultiPIE-Bias-Analysis_Hito2",
+        project="MultiPIE_Stereotypical_All_Classes",
         log_model="all",
     )
 
@@ -51,11 +51,9 @@ def run_experiment(exp_name, bias_type, bias_factor, n_limit, target_class=None)
     
     checkpoint_dir = f"checkpoints/{exp_name}/"
     checkpoint_callback = ModelCheckpoint(
-        monitor="val_recall_macro",
-        mode="max",
-        save_top_k=1,
+        save_last=True,
+        save_top_k=0,
         dirpath=checkpoint_dir,
-        filename="best-model-{epoch:02d}-{val_recall_macro:.2f}"
     )
 
     trainer = L.Trainer(
@@ -70,7 +68,7 @@ def run_experiment(exp_name, bias_type, bias_factor, n_limit, target_class=None)
     
     trainer.fit(model=model, datamodule=data)
 
-    trainer.test(model=model, datamodule=data, ckpt_path="best")
+    trainer.test(model=model, datamodule=data, ckpt_path="last")
 
     wandb.finish()
 
@@ -86,28 +84,29 @@ if __name__ == "__main__":
     print(f"N_limit global para ambos: {global_n_limit}")
     
     # SESGOS REPRESENTACIONALES
-    print("Analizando sesgos representacionales")
-    for f in BIAS_FACTORS:
-        print(f"Probando experimentos con f={f}")
-        run_experiment(
-            exp_name=f"Repres_bias_f{f}",
-            bias_type="representational",
-            bias_factor=f,
-            n_limit=n_limit_repres
-        )
-        wandb.finish()
+    # print("Analizando sesgos representacionales")
+    # for f in BIAS_FACTORS:
+    #     print(f"Probando experimentos con f={f}")
+    #     run_experiment(
+    #         exp_name=f"Repres_bias_f{f}",
+    #         bias_type="representational",
+    #         bias_factor=f,
+    #         n_limit=n_limit_repres
+    #     )
+    #     wandb.finish()
 
     #SESGOS ESTEREOTÍPICOS
     print("Analizando sesgos estereotípicos")
 
-    TARGET_CLASS_ID = 2
-
-    for f in BIAS_FACTORS:
-        run_experiment(
-            exp_name=f"Stereotipical_bias_f{f}",
-            bias_type="stereotipical",
-            bias_factor=f,
-            target_class=TARGET_CLASS_ID,
-            n_limit=n_limit_stereo
-        )
-        wandb.finish()
+    # TARGET_CLASS_ID = 3
+    TARGET_CLASS_IDS = [0,1,4,5]
+    for target_id in TARGET_CLASS_IDS:
+        for f in BIAS_FACTORS:
+            run_experiment(
+                exp_name=f"Stereotipical_bias_c{target_id}_f{f}",
+                bias_type="stereotipical",
+                bias_factor=f,
+                target_class=target_id,
+                n_limit=n_limit_stereo
+            )
+            wandb.finish()
