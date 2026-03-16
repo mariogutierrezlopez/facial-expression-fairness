@@ -102,3 +102,52 @@ class MultiPIEDataset(VisionDataset):
             'target': target,
             'meta': demographics
         }
+    
+class AffectNetDataset(VisionDataset):
+    
+    def __init__(self, root, df, transform=None, target_transform = None):
+        super().__init__(root, transform=transform, target_transform=target_transform)
+
+        self.df = df.copy().reset_index(drop=True)
+
+        mask = self.df['image_path'].apply(lambda x: os.path.exists(os.path.join(self.root, x)))
+        self.df = self.df[mask].reset_index(drop=True)
+
+
+    def __len__(self):
+        return len(self.df)
+    
+    def __getitem__(self, index):
+        row = self.df.iloc[index]
+        target = row['human_label']
+
+        img_path = row['image_path']
+        image = Image.open(img_path).convert('RGB')
+
+        demographics = {
+            'age': row['age'],
+            'gender_male': row['gender_male'],
+            'gender_female': row['gender_female'],
+            'yaw': row['yaw'],
+            'pitch': row['pitch'],
+            'roll': row['roll'],
+            'race_white': row['race_white'],
+            'race_black': row['race_black'],
+            'race_asian': row['race_asian'],
+            'race_indian': row['race_indian'],
+            'race_middle_eastern': row['race_middle_eastern'],
+            'race_latino_hispanic': row['race_latino_hispanic'],
+        }
+
+        # Transforms
+        if self.transform is not None:
+            image = self.transform(image)
+        
+        if self.target_transform is not None:
+            target = self.target_transform(target)
+        
+        return {
+            'image': image,
+            'target': target,
+            'meta': demographics
+        }

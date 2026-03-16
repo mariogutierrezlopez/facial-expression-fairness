@@ -1,36 +1,44 @@
 #   main.py
 #   Mario Gutiérrez López
 
+import argparse
 import lightning as L
 import torch
 from src.models.resnet50 import ResNet50
-from src.data.datamodule import MultiPIEDataModule
+from src.data.datamodule import MultiPIEDataModule, AffectNetDataModule
 from src.utils.utils import calc_nlimits
 
 from lightning.pytorch.loggers import WandbLogger
 from lightning.pytorch.callbacks import ModelCheckpoint
 import wandb
 
-# CONFIGURACION
-DATA_DIR = "/home12TB1/database/recognition/faces/MultiPie/data/"
-CSV_PATH = "/home12TB1/database/recognition/faces/MultiPie/demographic_info_cropped.csv"
+# --- CONFIGURACIÓN MULTIPIE ---
+MPIE_DATA_DIR = "/home12TB1/database/recognition/faces/MultiPie/data/"
+MPIE_CSV_PATH = "/home12TB1/database/recognition/faces/MultiPie/demographic_info_cropped.csv"
+
+# --- CONFIGURACIÓN AFFECTNET ---
+# ¡Asegúrate de cambiar estas rutas por las tuyas reales!
+AFFNET_DATA_DIR = "/home12TB1/database/recognition/faces/affectnet/"
+AFFNET_CSV_PATH = "/home12TB1/database/recognition/faces/affectnet/affectnetplus_train_annotations.csv"
+
+# --- HIPERPARÁMETROS GLOBALES ---
 LEARNING_RATE = 1e-4
-BATCH_SIZE = 32
+BATCH_SIZE = 128
 NUM_WORKERS = 12
 MAX_EPOCHS = 20
-N_OUTPUTS = 6
-#Factores de sesgo f
+N_OUTPUTS_MPIE = 6
+N_OUTPUTS_AFFNET = 8
 BIAS_FACTORS = [0.0, 0.25, 0.5, 0.75, 1.0]
 
 
-def run_experiment(exp_name, bias_type, bias_factor, n_limit, target_class=None):
+def run_multipie_experiment(exp_name, bias_type, bias_factor, n_limit, target_class=None):
 
     if wandb.run is not None:
         wandb.finish()
 
     data = MultiPIEDataModule(
-        data_dir=DATA_DIR,
-        csv_path=CSV_PATH,
+        data_dir=MPIE_DATA_DIR,
+        csv_path=MPIE_CSV_PATH,
         batch_size=BATCH_SIZE,
         num_workers=NUM_WORKERS,
         bias_type=bias_type,
@@ -39,7 +47,7 @@ def run_experiment(exp_name, bias_type, bias_factor, n_limit, target_class=None)
         target_class=target_class
     )
 
-    model = ResNet50(n_outputs=N_OUTPUTS, lr=LEARNING_RATE)
+    model = ResNet50(n_outputs=N_OUTPUTS_MPIE, lr=LEARNING_RATE)
 
     logger = WandbLogger(
         name=exp_name,
@@ -72,28 +80,52 @@ def run_experiment(exp_name, bias_type, bias_factor, n_limit, target_class=None)
 
     wandb.finish()
 
-if __name__ == "__main__":
+def run_affectnet_baseline():
+    exp_name = "AffectNet"
+    if wandb.run is not None: wandb.finish()
 
+    data = AffectNetDataModule(
+        data_dir=AFFNET_DATA_DIR, 
+        csv_path=AFFNET_CSV_PATH, 
+        batch_size=BATCH_SIZE,
+        num_workers=NUM_WORKERS
+    )
+    
+    model = ResNet50(n_outputs=N_OUTPUTS_AFFNET, lr=LEARNING_RATE)
+    logger = WandbLogger(name=exp_name, project="AffectNet_Baseline", log_model="all")
+    
+    checkpoint_callback = ModelCheckpoint(save_last=True, save_top_k=0, dirpath=f"checkpoints/{exp_name}/")
+    trainer = L.Trainer(accelerator="gpu", precision="16-mixed", max_epochs=MAX_EPOCHS,
+                        log_every_n_steps=10, logger=logger, callbacks=[checkpoint_callback])
+    
+    print("Iniciando entrenamiento Baseline de AffectNet")
+    trainer.fit(model=model, datamodule=data)
+    trainer.test(model=model, datamodule=data, ckpt_path="last")
+    wandb.finish()
+
+if __name__ == "__main__":
     torch.set_float32_matmul_precision('high')
 
-    n_limit_repres, n_limit_stereo = calc_nlimits(CSV_PATH, BIAS_FACTORS)
-    print(f"Limite representacional: {n_limit_repres}")
-    print(f"Límite estereotípico: {n_limit_stereo}")
+    parser = argparse.ArgumentParser(description="TFM Face Expression Bias")
+    parser.add_argument("--dataset", type=str, choices=["multipie", "affectnet"], default="affectnet",
+                        help="Elige qué dataset entrenar (multipie o affectnet)")
+    args = parser.parse_args()
 
-    global_n_limit = min(n_limit_repres, n_limit_stereo)
-    print(f"N_limit global para ambos: {global_n_limit}")
+    if args.dataset == "multipie":
+        print("LANZANDO EXPERIMENTOS MULTIPIE")
+        n_limit_repres, n_limit_stereo = calc_nlimits(MPIE_CSV_PATH, BIAS_FACTORS)
+        
+        TARGET_CLASS_IDS = [0,1,2,3,4,5]
+        for target_id in TARGET_CLASS_IDS:
+            for f in BIAS_FACTORS:
+                run_multipie_experiment(
+                    exp_name=f"Stereotipical_bias_c{target_id}_f{f}",
+                    bias_type="stereotipical",
+                    bias_factor=f,
+                    target_class=target_id,
+                    n_limit=n_limit_stereo
+                )
     
-    print("Analizando sesgos estereotípicos")
-
-    # TARGET_CLASS_ID = 3
-    TARGET_CLASS_IDS = [0,1,2,3,4,5]
-    for target_id in TARGET_CLASS_IDS:
-        for f in BIAS_FACTORS:
-            run_experiment(
-                exp_name=f"Stereotipical_bias_c{target_id}_f{f}",
-                bias_type="stereotipical",
-                bias_factor=f,
-                target_class=target_id,
-                n_limit=n_limit_stereo
-            )
-            wandb.finish()
+    elif args.dataset == "affectnet":
+        print("LANZANDO BASELINE AFFECTNET")
+        run_affectnet_baseline()
