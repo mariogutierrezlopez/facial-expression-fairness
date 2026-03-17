@@ -239,18 +239,26 @@ class MultiPIEDataModule(L.LightningDataModule):
 class AffectNetDataModule(L.LightningDataModule):
     def __init__(self,
                  data_dir: str,
-                 csv_path: str,
+                 csv_train_path: str,
+                 csv_test_path: str,
                  batch_size: int,
                  num_workers: int,
     ):
         super().__init__()
         self.data_dir = data_dir
-        self.csv_path = csv_path
+        self.csv_train_path = csv_train_path
+        self.csv_test_path = csv_test_path
         self.batch_size = batch_size
         self.num_workers = num_workers
 
     def setup(self, stage=None):
-        raw_df = pd.read_csv(self.csv_path)
+
+        # Tratamieto de datos para el dataset de train/val,
+        #   1. Generar columna 'gender_male_bin' que contiene 1 si el sujeto es hombre y 0 si es mujer
+        #   2. Eliminar archivos que no existen en el sistema
+        #   3. Columna 'stratify_col' con {human_label}_{gender} para balancear los conjuntos train/val 
+        #       en expresion y género
+        raw_df = pd.read_csv(self.csv_train_path)
         
         raw_df['gender_male_bin'] = (raw_df['gender_male'] > 0.5).astype(int)
 
@@ -259,19 +267,19 @@ class AffectNetDataModule(L.LightningDataModule):
 
         raw_df['stratify_col'] = raw_df['human_label'].astype(str) + "_" + raw_df['gender_male_bin'].astype(str)
 
-        train_df, temp_df = train_test_split(
+        train_df, val_df = train_test_split(
             raw_df,
-            test_size=0.3,
+            test_size=0.15,
             stratify=raw_df['stratify_col'],
             random_state=42
         )
 
-        val_df, test_df = train_test_split(
-            temp_df,
-            test_size=0.5,
-            stratify=temp_df['stratify_col'],
-            random_state=42
-        )
+        # Tratamiento de datos para el dataset de test. El procedimiento es el mismo que en train/val
+        # pero sin stratify_col
+        test_df = pd.read_csv(self.csv_test_path)
+        test_df['gender_male_bin'] = (test_df['gender_male'] > 0.5).astype(int)
+        mask = test_df['image_path'].apply(lambda x: os.path.exists(os.path.join(self.data_dir, x)))
+        test_df = test_df[mask].reset_index(drop=True)
 
         transform = transforms.Compose([
             transforms.Resize((224, 224)),
@@ -289,13 +297,13 @@ class AffectNetDataModule(L.LightningDataModule):
             self._print_contingency_table(train_balanced_df, stage_name="train")
             self._print_contingency_table(val_balanced_df, stage_name="val")
     
-            self.train_ds = AffectNetDataset(self.data_dir, df=train_balanced_df, transform=transform)
-            self.val_ds = AffectNetDataset(self.data_dir, df=val_balanced_df, transform=transform)
+            self.train_ds = AffectNetDataset(self.data_dir, df=train_balanced_df, transform=transform, return_metadata=False)
+            self.val_ds = AffectNetDataset(self.data_dir, df=val_balanced_df, transform=transform, return_metadata=False)
         
         if stage == "test" or stage is None:
             test_balanced_df = self._apply_strict_balance(test_df)
             self._print_contingency_table(test_balanced_df, stage_name="test")
-            self.test_ds = AffectNetDataset(self.data_dir, df=test_balanced_df, transform=transform)
+            self.test_ds = AffectNetDataset(self.data_dir, df=test_balanced_df, transform=transform, return_metadata=True)
 
     # Funcion de balanceo 50/50 en género
     def _apply_strict_balance(self, df):

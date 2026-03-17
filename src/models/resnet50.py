@@ -11,9 +11,11 @@ from torchmetrics import ConfusionMatrix
 import torch
 from torch.optim.lr_scheduler import OneCycleLR
 
+from src.utils.losses import FocalLoss
+        
 class ResNet50(L.LightningModule):
 
-    def __init__(self, n_outputs, lr=1e-3):
+    def __init__(self, n_outputs, lr=1e-3, weights_tensor=None):
         super().__init__()
 
         # Hyperparameters
@@ -29,7 +31,12 @@ class ResNet50(L.LightningModule):
 
         # Loss function and metrics
 
-        self.loss = nn.CrossEntropyLoss()
+        # Funcion FocalLoss autoimplementada, alpha da más importancia a unas variables que a otras para contrarrestar el desbalance
+        self.loss = FocalLoss(alpha=weights_tensor, gamma=2.0)
+        # self.loss = nn.CrossEntropyLoss()
+        
+        
+        
         self.training_acc = torchmetrics.Accuracy(num_classes=self.n_outputs, task="multiclass")
         self.valid_acc = torchmetrics.Accuracy(num_classes=self.n_outputs, task="multiclass")
         self.test_acc = torchmetrics.Accuracy(num_classes=self.n_outputs, task="multiclass")
@@ -40,9 +47,11 @@ class ResNet50(L.LightningModule):
         #Conf matrix
         self.conf_matrix = ConfusionMatrix(num_classes=self.n_outputs, task="multiclass")
         #Recall metrics
-        self.recall_per_class = torchmetrics.Recall(num_classes=self.n_outputs, task="multiclass", average=None)
-        self.avg_recall = torchmetrics.Recall(num_classes=self.n_outputs, task="multiclass", average="macro")
-
+        self.val_recall_per_class = torchmetrics.Recall(num_classes=self.n_outputs, task="multiclass", average=None)
+        self.val_avg_recall = torchmetrics.Recall(num_classes=self.n_outputs, task="multiclass", average="macro")
+        self.test_recall_per_class = torchmetrics.Recall(num_classes=self.n_outputs, task="multiclass", average=None)
+        self.test_avg_recall = torchmetrics.Recall(num_classes=self.n_outputs, task="multiclass", average="macro")
+        
         # Demographic evaluation
         self.test_step_outputs = []
 
@@ -63,12 +72,13 @@ class ResNet50(L.LightningModule):
         x, y = batch["image"], batch["target"]
         logits = self(x)
         l = self.loss(logits, y)
-        acc = self.valid_acc(logits, y)
-        recall = self.avg_recall(logits, y)
 
-        self.log("val_recall_macro", recall, on_epoch=True, prog_bar=True)
+        self.valid_acc(logits, y)
+        self.val_avg_recall(logits, y)
+
+        self.log("val_recall_macro", self.val_avg_recall, on_epoch=True, prog_bar=True)
         self.log("val_loss", l, on_step=False, on_epoch=True, prog_bar=True)
-        self.log("val_acc", acc, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("val_acc", self.valid_acc, on_step=False, on_epoch=True, prog_bar=True)
     
     def test_step(self, batch, batch_idx):
         x, y = batch["image"], batch["target"]
@@ -77,7 +87,11 @@ class ResNet50(L.LightningModule):
 
         logits = self(x)
         loss = self.loss(logits, y)
-        acc = self.test_acc(logits,y)
+
+        self.test_acc(logits, y)
+        self.test_recall_per_class(logits, y)
+        self.test_avg_recall(logits, y)
+        self.conf_matrix(logits, y)
 
         preds = torch.argmax(logits, dim=1)
 
@@ -90,12 +104,8 @@ class ResNet50(L.LightningModule):
 
         # LOG loss and acc
         self.log("test_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
-        self.log("test_acc", acc, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("test_acc", self.test_acc, on_step=False, on_epoch=True, prog_bar=True)
 
-        # COMPUTE METRICS
-        self.recall_per_class.update(logits, y)
-        self.avg_recall.update(logits, y)
-        self.conf_matrix.update(logits, y)
 
     def on_test_epoch_end(self):
         
@@ -107,8 +117,8 @@ class ResNet50(L.LightningModule):
         print(self.conf_matrix.compute())
 
         #OUTPUT RECALL METRICS
-        per_class = self.recall_per_class.compute()
-        avg_recall = self.avg_recall.compute()
+        per_class = self.test_recall_per_class.compute()
+        avg_recall = self.test_avg_recall.compute()
 
         self.log("test_avg_recall", avg_recall)
         for i, recall_val in enumerate(per_class):
@@ -141,8 +151,8 @@ class ResNet50(L.LightningModule):
         
         #RESET METRICS
         self.conf_matrix.reset()
-        self.avg_recall.reset()
-        self.recall_per_class.reset()
+        self.test_avg_recall.reset()
+        self.test_recall_per_class.reset()
 
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=self.lr)

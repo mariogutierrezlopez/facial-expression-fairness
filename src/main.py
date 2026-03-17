@@ -17,15 +17,21 @@ MPIE_DATA_DIR = "/home12TB1/database/recognition/faces/MultiPie/data/"
 MPIE_CSV_PATH = "/home12TB1/database/recognition/faces/MultiPie/demographic_info_cropped.csv"
 
 # --- CONFIGURACIÓN AFFECTNET ---
-# ¡Asegúrate de cambiar estas rutas por las tuyas reales!
 AFFNET_DATA_DIR = "/home12TB1/database/recognition/faces/affectnet/"
-AFFNET_CSV_PATH = "/home12TB1/database/recognition/faces/affectnet/affectnetplus_train_annotations.csv"
+AFFNET_CSV_TRAIN_PATH = "/home12TB1/database/recognition/faces/affectnet/affectnetplus_train_annotations.csv"
+AFFNET_CSV_TEST_PATH = "/home12TB1/database/recognition/faces/affectnet/affectnetplus_test_annotations_quality_illum.csv"
+
+# --- CONFIGURACIÓN AFFECTNET ---
+AFFWILD2_DATA_DIR = "/home12TB1/database/recognition/faces/affwild2/"
+AFFWILD2_CSV_TRAIN_PATH = "/home12TB1/database/recognition/faces/affwild2/dataframe_train.csv"
+AFFWILD2_CSV_TEST_PATH = "/home12TB1/database/recognition/faces/affwild2/dataframe_val_pose_demographic_illum.csv"
 
 # --- HIPERPARÁMETROS GLOBALES ---
 LEARNING_RATE = 1e-4
 BATCH_SIZE = 128
 NUM_WORKERS = 12
-MAX_EPOCHS = 20
+MAX_EPOCHS = 50
+EPOCHS_MPIE = 20
 N_OUTPUTS_MPIE = 6
 N_OUTPUTS_AFFNET = 8
 BIAS_FACTORS = [0.0, 0.25, 0.5, 0.75, 1.0]
@@ -58,20 +64,16 @@ def run_multipie_experiment(exp_name, bias_type, bias_factor, n_limit, target_cl
     print(f"Hiperparámetros del modelo{model.hparams}")
     
     checkpoint_dir = f"checkpoints/{exp_name}/"
-    checkpoint_callback = ModelCheckpoint(
-        save_last=True,
-        save_top_k=0,
-        dirpath=checkpoint_dir,
-    )
+    checkpoint_callback = ModelCheckpoint(save_last=True, save_top_k=0, dirpath=f"checkpoints/{exp_name}/")
 
     trainer = L.Trainer(
         accelerator="gpu",
         # devices=[0],
         precision="16-mixed",
-        max_epochs=MAX_EPOCHS,
+        max_epochs=EPOCHS_MPIE,
         log_every_n_steps=10,
         logger=logger,
-        callbacks=[checkpoint_callback]
+        callbacks=[checkpoint_callback],
     )
     
     trainer.fit(model=model, datamodule=data)
@@ -86,7 +88,8 @@ def run_affectnet_baseline():
 
     data = AffectNetDataModule(
         data_dir=AFFNET_DATA_DIR, 
-        csv_path=AFFNET_CSV_PATH, 
+        csv_train_path=AFFNET_CSV_TRAIN_PATH,
+        csv_test_path=AFFNET_CSV_TEST_PATH, 
         batch_size=BATCH_SIZE,
         num_workers=NUM_WORKERS
     )
@@ -94,13 +97,22 @@ def run_affectnet_baseline():
     model = ResNet50(n_outputs=N_OUTPUTS_AFFNET, lr=LEARNING_RATE)
     logger = WandbLogger(name=exp_name, project="AffectNet_Baseline", log_model="all")
     
-    checkpoint_callback = ModelCheckpoint(save_last=True, save_top_k=0, dirpath=f"checkpoints/{exp_name}/")
+
+    checkpoint_callback = ModelCheckpoint(
+        monitor='val_recall_macro',
+        dirpath='checkpoints_affectnet/',
+        filename='restnet50-epoch{epoch:02d}-val{val_recall_macro:.3f}',
+        save_top_k=2,
+        mode='max',
+        verbose=True
+    )
+
     trainer = L.Trainer(accelerator="gpu", precision="16-mixed", max_epochs=MAX_EPOCHS,
                         log_every_n_steps=10, logger=logger, callbacks=[checkpoint_callback])
     
     print("Iniciando entrenamiento Baseline de AffectNet")
     trainer.fit(model=model, datamodule=data)
-    trainer.test(model=model, datamodule=data, ckpt_path="last")
+    trainer.test(model=model, datamodule=data, ckpt_path="best")
     wandb.finish()
 
 if __name__ == "__main__":

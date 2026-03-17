@@ -102,11 +102,16 @@ class MultiPIEDataset(VisionDataset):
             'target': target,
             'meta': demographics
         }
-    
+
 class AffectNetDataset(VisionDataset):
     
-    def __init__(self, root, df, transform=None, target_transform = None):
+    def __init__(self, root, df, transform=None, target_transform = None, return_metadata=False):
         super().__init__(root, transform=transform, target_transform=target_transform)
+
+        # Este parámetro maneja la información que se devuelve por cada objeto en el __getitem__()
+        #   train/val -> False | Solo se devuelve la imagen y la clase objetivo
+        #   train/val -> True | Además de la imagen y el target, se devuelven los metadatos (edad, género, raza, iluminación...)
+        self.return_metadata = return_metadata
 
         self.df = df.copy().reset_index(drop=True)
 
@@ -121,33 +126,39 @@ class AffectNetDataset(VisionDataset):
         row = self.df.iloc[index]
         target = row['human_label']
 
-        img_path = row['image_path']
+        img_path = os.path.join(self.root, row['image_path'])
         image = Image.open(img_path).convert('RGB')
 
-        demographics = {
-            'age': row['age'],
-            'gender_male': row['gender_male'],
-            'gender_female': row['gender_female'],
-            'yaw': row['yaw'],
-            'pitch': row['pitch'],
-            'roll': row['roll'],
-            'race_white': row['race_white'],
-            'race_black': row['race_black'],
-            'race_asian': row['race_asian'],
-            'race_indian': row['race_indian'],
-            'race_middle_eastern': row['race_middle_eastern'],
-            'race_latino_hispanic': row['race_latino_hispanic'],
-        }
-
-        # Transforms
-        if self.transform is not None:
+        if self.transform:
             image = self.transform(image)
         
         if self.target_transform is not None:
             target = self.target_transform(target)
         
-        return {
-            'image': image,
-            'target': target,
-            'meta': demographics
-        }
+        # Lógica para devolver metadatos:
+        if self.return_metadata:
+            demographics = {
+                'age': row['age'],
+                'gender_male': row['gender_male'],
+                'gender_female': row['gender_female'],
+                'yaw': row['yaw'],
+                'pitch': row['pitch'],
+                'roll': row['roll'],
+                'race_white': row['race_white'],
+                'race_black': row['race_black'],
+                'race_asian': row['race_asian'],
+                'race_indian': row['race_indian'],
+                'race_middle_eastern': row['race_middle_eastern'],
+                'race_latino_hispanic': row['race_latino_hispanic'],
+            }
+
+            return {
+                'image': image,
+                'target': target,
+                'meta': demographics
+            }
+        else:
+            return {
+                'image': image,
+                'target': target
+            }
