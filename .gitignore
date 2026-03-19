@@ -14,3 +14,12 @@
 # Don't track log files to keep repository clean
 logs.log
 *.log
+
+# Temp files generated during run
+__pycache__/
+logs.log
+
+# Data files
+*.csv
+*.zip
+*.tar.gz
