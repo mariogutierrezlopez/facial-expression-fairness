@@ -2,7 +2,7 @@
 #   Mario Gutiérrez López
 
 
-from src.data.datamodule import MultiPIEDataModule
+from src.data.datamodules.datamodule import MultiPIEDataModule
 from src.models.resnet50 import ResNet50
 from lightning.pytorch.loggers import WandbLogger
 import lightning as L

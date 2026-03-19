@@ -31,9 +31,14 @@ class ResNet50(L.LightningModule):
 
         # Loss function and metrics
 
-        # Funcion FocalLoss autoimplementada, alpha da más importancia a unas variables que a otras para contrarrestar el desbalance
-        self.loss = FocalLoss(alpha=weights_tensor, gamma=2.0)
-        # self.loss = nn.CrossEntropyLoss()
+        # # Funcion FocalLoss autoimplementada, alpha da más importancia a unas variables que a otras para contrarrestar el desbalance
+        # if weights_tensor is not None:
+        #     self.register_buffer('class_weights', weights_tensor)
+        #     self.loss = FocalLoss(alpha=self.class_weights, gamma=2.0)
+        # else:
+        #     self.loss = FocalLoss(alpha=None, gamma=2.0)
+        
+        self.loss = nn.CrossEntropyLoss()
         
         
         

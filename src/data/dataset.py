@@ -162,3 +162,58 @@ class AffectNetDataset(VisionDataset):
                 'image': image,
                 'target': target
             }
+
+class AffWild2Dataset(VisionDataset):
+
+    def __init__(self, root, df, transform=None, target_transform = None, return_metadata=False):
+        super().__init__(root, transform=transform, target_transform=target_transform)
+
+        # Este parámetro maneja la información que se devuelve por cada objeto en el __getitem__()
+        #   train/val -> False | Solo se devuelve la imagen y la clase objetivo
+        #   train/val -> True | Además de la imagen y el target, se devuelven los metadatos (edad, género, raza, iluminación...)
+        self.return_metadata = return_metadata
+
+        self.df = df.copy().reset_index(drop=True)
+
+        # Eliminar filas donde no se sepa la expresion
+        self.df.dropna(subset=['expr'])
+
+        # Verificación de que las imágenes existen (comentado por rendimiento)
+        # mask = self.df['image_path'].apply(lambda x: os.path.exists(os.path.join(self.root, x)))
+        # self.df = self.df[mask].reset_index(drop=True)
+
+    def __len__(self):
+        return len(self.df)
+    
+    def __getitem__(self, index):
+        row = self.df.iloc[index]
+        target = int(row['expr'])
+
+        img_path = os.path.join(self.root, row['image_path'])
+        image = Image.open(img_path).convert('RGB')
+
+        if self.transform:
+            image = self.transform(image)
+        
+        if self.target_transform is not None:
+            target = self.target_transform(target)
+        
+        # Lógica para devolver metadatos:
+        if self.return_metadata:
+            demographics = {
+                'video': row['video'],
+                'frame_idx': row['frame_idx'],
+                'subject': row['subject'],
+                'split': row['split'],
+            }
+
+            return {
+                'image': image,
+                'target': target,
+                'meta': demographics
+            }
+        else:
+            return {
+                'image': image,
+                'target': target
+            }

@@ -16,7 +16,8 @@ class FocalLoss(nn.Module):
 
     def forward(self, inputs, targets):
         # Calculamos la Cross Entropy básica primero
-        ce_loss = F.cross_entropy(inputs, targets, reduction='none', weight=self.alpha)
+        weights = self.alpha.to(inputs.device) if self.alpha is not None else None
+        ce_loss = F.cross_entropy(inputs, targets, reduction='none', weight=weights)
         
         # p_t es la probabilidad de la clase correcta
         pt = torch.exp(-ce_loss) 
