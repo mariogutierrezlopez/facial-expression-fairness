@@ -7,23 +7,23 @@
 > **Autor:** Mario Gutiérrez López
 
 - [🎭 Facial Expression Fairness: Auditoría y Mitigación de Sesgos en FER](#-facial-expression-fairness-auditoría-y-mitigación-de-sesgos-en-fer)
-  - [Descripción del Proyecto](#descripción-del-proyecto)
-  - [Memoria del Proyecto](#memoria-del-proyecto)
-  - [Instalación](#instalación)
-  - [Uso y ejecución](#uso-y-ejecución)
+- [Descripción del Proyecto](#descripción-del-proyecto)
+- [Memoria del Proyecto](#memoria-del-proyecto)
+- [Instalación](#instalación)
+- [Uso y ejecución](#uso-y-ejecución)
 
 
 
 
-## Descripción del Proyecto
+# Descripción del Proyecto
 Este repositorio contiene el código fuente para la auditoría y mitigación de sesgos demográficos e iluminativos en sistemas de Reconocimiento de Expresiones Faciales (FER - *Facial Expression Recognition*). 
 
 El objetivo principal es analizar cómo factores in-the-wild (como el *Face Skin Brightness* o el género) afectan a la distribución del espacio latente en redes neuronales profundas y proponer soluciones geométricas y de balanceo de clases.
 
-## Memoria del Proyecto
+# Memoria del Proyecto
 El documento completo de la tesis se encuentra en fase de redacción. **[Puedes consultar el borrador en vivo aquí](https://es.overleaf.com/read/grfqztcmdkdf#494df4)**
 
-## Instalación
+# Instalación
 Clona el repositorio e instala las dependencias (se recomienda usar un entorno virtual con Conda):
 
 ```bash
@@ -34,7 +34,7 @@ cd facial-expression-fairness
 pip install -r requirements.txt
 ```
 
-## Uso y ejecución
+# Uso y ejecución
 El proyecto está centralizado en el script `main.py`
 
 Para entrenar el modelo baseline, el flag `--dataset` define el dataset que se va a utilizar, se pueden utilizar los valores `multipie`, `affectnet` o `affwild2`
