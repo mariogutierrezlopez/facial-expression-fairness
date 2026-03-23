@@ -23,3 +23,6 @@ logs.log
 *.csv
 *.zip
 *.tar.gz
+
+# Embeddings_stydy local for now
+embeddings_stydu.ipynb

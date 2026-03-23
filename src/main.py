@@ -49,7 +49,7 @@ weights = [total / (n_classes * n) for n in num_samples]
 class_weights = torch.tensor(weights, dtype=torch.float32)
 
 
-def run_multipie_experiment(exp_name, bias_type, bias_factor, n_limit, target_class=None):
+def run_multipie_experiment(exp_name, bias_type, bias_factor, n_limit, target_class=None, test_only=False, ckpt_path=None):
 
     if wandb.run is not None:
         wandb.finish()
@@ -65,7 +65,7 @@ def run_multipie_experiment(exp_name, bias_type, bias_factor, n_limit, target_cl
         target_class=target_class
     )
 
-    model = ResNet50(n_outputs=N_OUTPUTS_MPIE, lr=LEARNING_RATE)
+    model = ResNet50(n_outputs=N_OUTPUTS_MPIE, lr=LEARNING_RATE, dataset_name="MultiPIE")
 
     logger = WandbLogger(
         name=exp_name,
@@ -75,7 +75,6 @@ def run_multipie_experiment(exp_name, bias_type, bias_factor, n_limit, target_cl
 
     print(f"Hiperparámetros del modelo{model.hparams}")
     
-    checkpoint_dir = f"checkpoints/{exp_name}/"
     checkpoint_callback = ModelCheckpoint(save_last=True, save_top_k=0, dirpath=f"checkpoints/{exp_name}/")
 
     trainer = L.Trainer(
@@ -87,15 +86,18 @@ def run_multipie_experiment(exp_name, bias_type, bias_factor, n_limit, target_cl
         logger=logger,
         callbacks=[checkpoint_callback],
     )
-    
-    trainer.fit(model=model, datamodule=data)
 
-    trainer.test(model=model, datamodule=data, ckpt_path="last")
+    if not test_only:
+        trainer.fit(model=model, datamodule=data)
+        trainer.test(model=model, datamodule=data, ckpt_path="last")
+    else:
+        print(f"Iniciando modo test sobre MultiPIE con el modelo {ckpt_path}")
+        trainer.test(model=model, datamodule=data, ckpt_path=ckpt_path)
 
     wandb.finish()
 
 # AFFECTNET
-def run_affectnet_baseline():
+def run_affectnet_baseline(test_only=False, ckpt_path=None):
     exp_name = "AffectNet_fl_balanced"
     if wandb.run is not None: wandb.finish()
 
@@ -107,7 +109,7 @@ def run_affectnet_baseline():
         num_workers=NUM_WORKERS
     )
     
-    model = ResNet50(n_outputs=N_OUTPUTS_AFFNET, lr=LEARNING_RATE, weights_tensor=class_weights)
+    model = ResNet50(n_outputs=N_OUTPUTS_AFFNET, lr=LEARNING_RATE, weights_tensor=class_weights, dataset_name="Affectnet")
     logger = WandbLogger(name=exp_name, project="AffectNet_Baseline", log_model="all")
     
 
@@ -123,13 +125,18 @@ def run_affectnet_baseline():
     trainer = L.Trainer(accelerator="gpu", precision="16-mixed", max_epochs=MAX_EPOCHS,
                         log_every_n_steps=10, logger=logger, callbacks=[checkpoint_callback])
     
-    print("Iniciando entrenamiento Baseline de AffectNet")
-    trainer.fit(model=model, datamodule=data)
-    trainer.test(model=model, datamodule=data, ckpt_path="best")
+    if not test_only:
+        print("Iniciando entrenamiento Baseline de AffectNet")
+        trainer.fit(model=model, datamodule=data)
+        trainer.test(model=model, datamodule=data, ckpt_path="best")
+    else:
+        print(f"Iniciando test en AffectNet sobre el modelo {ckpt_path}")
+        trainer.test(model=model, datamodule=data, ckpt_path=ckpt_path)
+
     wandb.finish()
 
 # AFFWILD2
-def run_affwild2_baseline():
+def run_affwild2_baseline(test_only=False, ckpt_path=None):
     exp_name = "AffWild2_baseline"
     if wandb.run is not None: wandb.finish()
 
@@ -142,7 +149,7 @@ def run_affwild2_baseline():
     )
 
 
-    model = ResNet50(n_outputs=N_OUTPUTS_AFFWILD2, lr=LEARNING_RATE, weights_tensor=None)
+    model = ResNet50(n_outputs=N_OUTPUTS_AFFWILD2, lr=LEARNING_RATE, weights_tensor=None, dataset_name='AffWild2')
     logger = WandbLogger(name=exp_name, project="AffWild2", log_model="all")
     
 
@@ -158,18 +165,36 @@ def run_affwild2_baseline():
     trainer = L.Trainer(accelerator="gpu", precision="16-mixed", max_epochs=MAX_EPOCHS,
                         log_every_n_steps=10, logger=logger, callbacks=[checkpoint_callback])
     
-    print("Iniciando entrenamiento Baseline de Affwild2")
-    trainer.fit(model=model, datamodule=data)
-    trainer.test(model=model, datamodule=data, ckpt_path="best")
+    if not test_only:
+        print("Iniciando entrenamiento Baseline de Affwild2")
+        trainer.fit(model=model, datamodule=data)
+        trainer.test(model=model, datamodule=data, ckpt_path="best")
+    else:
+        print(f"Iniciando test en AffWild2 sobre el modelo {ckpt_path}")
+        trainer.test(model=model, datamodule=data, ckpt_path=ckpt_path)
+    
     wandb.finish()
 
 if __name__ == "__main__":
     torch.set_float32_matmul_precision('high')
 
     parser = argparse.ArgumentParser(description="TFM Face Expression Bias")
+    
+    # Argumento para escoger dataset
     parser.add_argument("--dataset", type=str, choices=["multipie", "affectnet", "affwild2"], default="affectnet",
-                        help="Elige qué dataset entrenar (multipie o affectnet)")
+                        help="Elige qué dataset entrenar (multipie, affectnet o affwild2)")
+    
+    # Argumentos para hacer solo testing y guardar los embeddings
+    parser.add_argument("--test_only", action="store_true",
+                        help="Activa este flag para realizar solo el test de un modelo guardado")
+    
+    parser.add_argument("--ckpt_path", type=str, default=None,
+                        help="Ruta al archivo .ckpt del modelo entrenado")
+
     args = parser.parse_args()
+
+    if args.test_only and args.ckpt_path is None:
+        parser.error("Si usas --test_only necesitas especificar la ruta del checkpoint")
 
     if args.dataset == "multipie":
         print("LANZANDO EXPERIMENTOS MULTIPIE")
@@ -183,13 +208,15 @@ if __name__ == "__main__":
                     bias_type="stereotipical",
                     bias_factor=f,
                     target_class=target_id,
-                    n_limit=n_limit_stereo
+                    n_limit=n_limit_stereo,
+                    test_only=args.test_only,
+                    ckpt_path=args.ckpt_path
                 )
     
     elif args.dataset == "affectnet":
         print("LANZANDO BASELINE AFFECTNET")
-        run_affectnet_baseline()
+        run_affectnet_baseline(test_only=args.test_only, ckpt_path=args.ckpt_path)
     
     elif args.dataset == "affwild2":
         print("LANZANDO EXPERIMENTO AFFWILD2")
-        run_affwild2_baseline()
+        run_affwild2_baseline(test_only=args.test_only, ckpt_path=args.ckpt_path)

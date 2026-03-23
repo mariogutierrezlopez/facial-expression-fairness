@@ -15,7 +15,7 @@ from src.utils.losses import FocalLoss
         
 class ResNet50(L.LightningModule):
 
-    def __init__(self, n_outputs, lr=1e-3, weights_tensor=None):
+    def __init__(self, n_outputs, lr=1e-3, weights_tensor=None, dataset_name:str = None):
         super().__init__()
 
         # Hyperparameters
@@ -60,9 +60,33 @@ class ResNet50(L.LightningModule):
         # Demographic evaluation
         self.test_step_outputs = []
 
+        # Dataset name for saving test results
+        self.dataset_name = dataset_name
 
-    def forward(self, x):
-        return self.model(x)
+    # La función fordward ha sido modificada para obtener los embeddings de la imagen para el Hito 3
+    # Cuando el flag 'return_embeddings' == True
+    def forward(self, x, return_embeddings=False):
+        # Pasar la imagen por todas las capas de la ResNet excepto la última
+        x = self.model.conv1(x)
+        x = self.model.bn1(x)
+        x = self.model.relu(x)
+        x = self.model.maxpool(x)
+
+        x = self.model.layer1(x)
+        x = self.model.layer2(x)
+        x = self.model.layer3(x)
+        x = self.model.layer4(x)
+
+        x = self.model.avgpool(x)
+        embeddings = torch.flatten(x, 1)
+
+        # Pasar el embedding por la capa final para obtener la predicción
+        logits = self.model.fc(embeddings)
+
+        if return_embeddings:
+            return logits, embeddings
+        else:
+            return logits
     
     def training_step(self, batch, batch_idx):
         x, y = batch["image"], batch["target"]
@@ -89,8 +113,9 @@ class ResNet50(L.LightningModule):
         x, y = batch["image"], batch["target"]
         gender_male = batch["meta"]["gender_male"]
         gender_female = batch["meta"]["gender_female"]
+        illumination = batch["meta"]["illumination"]
 
-        logits = self(x)
+        logits, embeddings = self(x, return_embeddings=True)
         loss = self.loss(logits, y)
 
         self.test_acc(logits, y)
@@ -103,8 +128,10 @@ class ResNet50(L.LightningModule):
         self.test_step_outputs.append({
             "preds": preds.detach().cpu(),
             "targets": y.detach().cpu(),
+            "embeddings": embeddings.detach().cpu(),
             "gender_male": gender_male.detach().cpu(),
-            "gender_female": gender_female.detach().cpu()
+            "gender_female": gender_female.detach().cpu(),
+            "illumination": illumination.detach().cpu()
         })
 
         # LOG loss and acc
@@ -132,6 +159,11 @@ class ResNet50(L.LightningModule):
         if len(self.test_step_outputs) > 0:
             all_preds = torch.cat([x["preds"] for x in self.test_step_outputs])
             all_targets = torch.cat([x["targets"] for x in self.test_step_outputs])
+
+            all_embeddings = torch.cat([x["embeddings"] for x in self.test_step_outputs])
+            all_illumination = torch.cat([x["illumination"] for x in self.test_step_outputs])
+
+            # Recall por género
             all_male = torch.cat([x["gender_male"] for x in self.test_step_outputs])
             all_female = torch.cat([x["gender_female"] for x in self.test_step_outputs])
 
@@ -151,6 +183,17 @@ class ResNet50(L.LightningModule):
                     subset_targets = all_targets[mask_female]
                     recall = (subset_preds == subset_targets).sum().item() / len(subset_targets)
                     self.log(f"test_recall_class_{c}_FEMALE", recall)
+
+
+            # Guardar los tensores para el análisis de distancias
+            torch.save({
+                'embeddings': all_embeddings,
+                'targets': all_targets,
+                'preds': all_preds,
+                'illumination': all_illumination
+            }, f'test_embeddings_results_{self.dataset_name}.pt')
+            print(f"Embeddings guardados en test_embeddings_results_{self.dataset_name}.pt")
+
 
             self.test_step_outputs.clear()
         

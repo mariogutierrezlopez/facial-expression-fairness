@@ -150,6 +150,11 @@ class AffectNetDataset(VisionDataset):
                 'race_indian': row['race_indian'],
                 'race_middle_eastern': row['race_middle_eastern'],
                 'race_latino_hispanic': row['race_latino_hispanic'],
+                'hf_ratio': row['hf_ratio'],
+                'log_var': row['log_var'],
+                'quality_score': row['quality_score'],
+                'quality_bin': row['quality_bin'],
+                'illumination': row['illumination']
             }
 
             return {
@@ -205,6 +210,13 @@ class AffWild2Dataset(VisionDataset):
                 'frame_idx': row['frame_idx'],
                 'subject': row['subject'],
                 'split': row['split'],
+                'yaw': row['yaw'],
+                'pitch': row['pitch'],
+                'roll': row['roll'],
+                'ethnicity': row['ethnicity'],
+                'gender': row['gender'],
+                'age': row['age'],
+                'illumination': row['illumination']
             }
 
             return {
