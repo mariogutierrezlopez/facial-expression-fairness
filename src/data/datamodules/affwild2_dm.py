@@ -11,6 +11,8 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from ..dataset import AffWild2Dataset # Corregir esto
 
+from typing import Optional
+
 class AffWild2DatModule(L.LightningDataModule):
     def __init__(self,
                  data_dir: str,
@@ -26,7 +28,7 @@ class AffWild2DatModule(L.LightningDataModule):
         self.batch_size = batch_size
         self.num_workers = num_workers
 
-    def setup(self, stage=None):
+    def setup(self, stage:Optional[str]=None) -> None:
 
         # Tratamieto de datos para el dataset de train
         #   1. Eliminar archivos que no existen en el sistema
@@ -60,7 +62,7 @@ class AffWild2DatModule(L.LightningDataModule):
         ])
 
         if stage == "fit" or stage is None:
-            train_balanced_df = self._apply_expression_balance(train_df)
+            train_balanced_df = self._apply_subject_and_expression_balance(train_df, max_frames_per_subject=250)
             # val_balanced_df = self._apply_strict_balance(val_df)
             
             self._print_contingency_table(train_balanced_df, stage_name="train")
@@ -74,121 +76,46 @@ class AffWild2DatModule(L.LightningDataModule):
             self._print_contingency_table(test_df, stage_name="test")
             self.test_ds = AffWild2Dataset(self.data_dir, df=test_df, transform=transform, return_metadata=True)
 
-    # Funcion de balanceo 50/50 en género
-    #TODO Verificar si esta función aplica a AffWild2
-    # def _apply_strict_balance(self, df):
+    def _apply_subject_and_expression_balance(self, df: pd.DataFrame, max_frames_per_subject:int=200) -> pd.DataFrame:
+        """
+        Esta función balancea los datos para AffWild2, al ser un dataset que contiene muchas imágenes repetidas del mismo sujeto, nos aseguramos 
+        de limitar ese número de imágenes mediante el parámetro `max_frames_per_subject`, balanceando el número de muestras por expresión a partir de ese
+        parámetro
+        """
 
-    #     df = df.copy()
-    #     df['gender_male_bin'] = (df['gender_male'] > 0.5).astype(int)
-    #     df['gender_female_bin'] = (df['gender_female'] > 0.5).astype(int)
+        df = df.copy()
+
+        df_limited = df.groupby(['expr', 'subject'], group_keys=False).apply(
+            lambda x: x.sample(n=min(len(x), max_frames_per_subject), random_state=42)
+        ).reset_index(drop=True)
+
+        # Calcular el mínimo de muestras por emoción para limitar el dataset a ese valor `target_n``
+        counts = df_limited['expr'].value_counts()
+        target_n = counts.min()
+
+        # Muestrear todas las clases a ese valor
+        final_dfs = []
+        for label in counts.index:
+            sub_df = df_limited[df_limited['expr'] == label]
+
+            sampled_class = sub_df.sample(n=target_n, replace=False, random_state=42)
+            final_dfs.append(sampled_class)
         
-    #     final_dfs = []
-    #     classes = df['expr'].unique()
+        # Mezclar
+        df_balanced = pd.concat(final_dfs).sample(frac=1, random_state=42).reset_index(drop=True)
+        return df_balanced
 
-    #     for label in classes:
-    #         available_women = df[(df['expr'] == label) & (df['gender_female_bin'] == 1)]
-    #         available_men = df[(df['expr'] == label) & (df['gender_male_bin'] == 1)]
 
-    #         n_limit = min(len(available_women), len(available_men))
 
-    #         if n_limit > 0:
-    #             sampled_women = available_women.sample(n=n_limit, random_state=42)
-    #             sampled_men = available_men.sample(n=n_limit, random_state=42)
-    #             final_dfs.extend([sampled_women, sampled_men])
-    #         else:
-    #             print(f" la clase {label} ha sido excluida por falta de representantes de un género.")
 
-    #     # Mezclar el dataset final
-    #     return pd.concat(final_dfs).sample(frac=1, random_state=42).reset_index(drop=True)
-    
-    # TODO Verificar si esta funcion aplica a AffWild2
-    # def _apply_expression_balance(self, df):
-    #     df = df.copy()
-        
-    #     # 1. Encontrar el "Máximo de los Mínimos"
-    #     # Contamos cuántas imágenes hay por cada emoción y nos quedamos con la cifra más baja
-    #     counts = df['expr'].value_counts()
-    #     n_limit = counts.min()
-        
-    #     print(f"--- Balanceando dataset ---")
-    #     print(f"Mínimo común encontrado: {n_limit} muestras por clase.")
-        
-    #     final_dfs = []
-    #     classes = df['expr'].unique()
-
-    #     # 2. Samplear n_limit para cada clase
-    #     for label in classes:
-    #         # Filtramos por emoción y sacamos exactamente n_limit muestras
-    #         sampled_class = df[df['expr'] == label].sample(n=n_limit, random_state=42)
-    #         final_dfs.append(sampled_class)
-
-    #     # 3. Concatenar, barajar y resetear índice
-    #     df_balanced = pd.concat(final_dfs).sample(frac=1, random_state=42).reset_index(drop=True)
-        
-    #     print(f"Dataset final balanceado: {len(df_balanced)} imágenes totales.")
-    #     return df_balanced
-    
-
-    # # TODO Revisar esta funcion (en AffWild2 no existe el género)
-    # def _apply_expression_balance_with_gender_prior(self, df):
-    #     df = df.copy()
-
-    #     if 'gender_female_bin' not in df.columns:
-    #         df['gender_female_bin'] = (df['gender_female'] > 0.5).astype(int)
-    #     if 'gender_male_bin' not in df.columns:
-    #         df['gender_male_bin'] = (df['gender_male'] > 0.5).astype(int)
-            
-    #     # 1. Definir el objetivo por clase (el "máximo de los mínimos")
-    #     counts = df['expr'].value_counts()
-    #     global_target = counts.min()
-    #     target_per_gender = global_target // 2
-        
-    #     print(f"Balanceo Híbrido")
-    #     print(f"Objetivo por clase: {global_target} (Ideal: {target_per_gender} por género)")
-        
-    #     final_dfs = []
-    #     classes = df['expr'].unique()
-
-    #     for label in classes:
-    #         # Separar por género para esta clase específica
-    #         women_df = df[(df['expr'] == label) & (df['gender_female_bin'] == 1)]
-    #         men_df = df[(df['expr'] == label) & (df['gender_male_bin'] == 1)]
-            
-    #         n_w = len(women_df)
-    #         n_m = len(men_df)
-
-    #         # Caso A: Ambos géneros tienen suficientes fotos para el 50/50
-    #         if n_w >= target_per_gender and n_m >= target_per_gender:
-    #             s_women = women_df.sample(n=target_per_gender, random_state=42)
-    #             s_men = men_df.sample(n=target_per_gender, random_state=42)
-            
-    #         # Caso B: Faltan mujeres -> Pillamos todas las mujeres y rellenamos con hombres
-    #         elif n_w < target_per_gender:
-    #             s_women = women_df # Todas las disponibles
-    #             n_needed_men = global_target - n_w
-    #             s_men = men_df.sample(n=min(n_needed_men, n_m), random_state=42)
-                
-    #         # Caso C: Faltan hombres -> Pillamos todos los hombres y rellenamos con mujeres
-    #         else:
-    #             s_men = men_df # Todos los disponibles
-    #             n_needed_women = global_target - n_m
-    #             s_women = women_df.sample(n=min(n_needed_women, n_w), random_state=42)
-
-    #         final_dfs.extend([s_women, s_men])
-
-    #     df_balanced = pd.concat(final_dfs).sample(frac=1, random_state=42).reset_index(drop=True)
-    #     return df_balanced
-
-    def _apply_expression_balance(self, df):
+    def _apply_expression_balance(self, df:pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
         
-        # 1. Ignorar clases que no existen de verdad en el dataframe
+        # Ignorar clases que no existen de verdad en el dataframe
         counts = df['expr'].value_counts()
         counts = counts[counts > 0] # Nos quedamos solo con lo que existe
         
-        # 2. Definir un objetivo. 
-        # Si counts.min() es muy pequeño (ej. 10 fotos), el dataset será enano.
-        # Mejor pon un mínimo fijo, por ejemplo 2000 muestras por clase.
+        # Definir un objetivo. 
         target_n = max(2000, counts.min()) 
         
         print(f"--- Balanceando AffWild2 ---")
@@ -201,7 +128,6 @@ class AffWild2DatModule(L.LightningDataModule):
             sub_df = df[df['expr'] == label]
             n_available = len(sub_df)
             
-            # Si tiene menos de lo que queremos, hacemos oversampling (replace=True)
             replace = n_available < target_n
             
             sampled_class = sub_df.sample(n=target_n, replace=replace, random_state=42)
@@ -211,7 +137,7 @@ class AffWild2DatModule(L.LightningDataModule):
         print(f"Dataset final: {len(df_balanced)} imágenes.")
         return df_balanced
     
-    def _print_contingency_table(self, df, stage_name="train"):
+    def _print_contingency_table(self, df:pd.DataFrame, stage_name:str="train") -> None:
         print(f"\n--- Distribucion for {stage_name} ---")
         
         counts = df['expr'].value_counts().sort_index()
@@ -224,11 +150,11 @@ class AffWild2DatModule(L.LightningDataModule):
         
         print(f"Total samples in {stage_name}: {len(df)}")
     
-    def train_dataloader(self):
+    def train_dataloader(self) -> DataLoader:
         return DataLoader(self.train_ds, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True)
     
-    def val_dataloader(self):
+    def val_dataloader(self) -> DataLoader:
         return DataLoader(self.val_ds, batch_size=self.batch_size, num_workers=self.num_workers)
     
-    def test_dataloader(self):
+    def test_dataloader(self) -> DataLoader:
         return DataLoader(self.test_ds, batch_size=self.batch_size, num_workers=self.num_workers)

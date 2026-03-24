@@ -11,6 +11,8 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from ..dataset import AffectNetDataset
 
+from typing import Optional
+
 class AffectNetDataModule(L.LightningDataModule):
     def __init__(self,
                  data_dir: str,
@@ -26,7 +28,7 @@ class AffectNetDataModule(L.LightningDataModule):
         self.batch_size = batch_size
         self.num_workers = num_workers
 
-    def setup(self, stage=None):
+    def setup(self, stage:Optional[str]=None) -> None:
 
         # Tratamieto de datos para el dataset de train/val,
         #   1. Generar columna 'gender_male_bin' que contiene 1 si el sujeto es hombre y 0 si es mujer
@@ -40,17 +42,6 @@ class AffectNetDataModule(L.LightningDataModule):
         mask = train_df['image_path'].apply(lambda x: os.path.exists(os.path.join(self.data_dir, x)))
         raw_df = train_df[mask].reset_index(drop=True)
 
-        # train_df['stratify_col'] = train_df['human_label'].astype(str) + "_" + train_df['gender_male_bin'].astype(str)
-
-        # train_df, val_df = train_test_split(
-        #     raw_df,
-        #     test_size=0.15,
-        #     stratify=raw_df['stratify_col'],
-        #     random_state=42
-        # )
-
-        # Tratamiento de datos para el dataset de test. El procedimiento es el mismo que en train/val
-        # pero sin stratify_col
         test_df = pd.read_csv(self.csv_test_path)
         test_df['gender_male_bin'] = (test_df['gender_male'] > 0.5).astype(int)
         mask = test_df['image_path'].apply(lambda x: os.path.exists(os.path.join(self.data_dir, x)))
@@ -73,7 +64,7 @@ class AffectNetDataModule(L.LightningDataModule):
         ])
 
         if stage == "fit" or stage is None:
-            train_balanced_df = self._apply_expression_balance_with_gender_prior(train_df)
+            train_balanced_df = self._apply_expression_balance_with_gender_prior(raw_df)
             # val_balanced_df = self._apply_strict_balance(val_df)
             
             self._print_contingency_table(train_balanced_df, stage_name="train")
@@ -87,60 +78,7 @@ class AffectNetDataModule(L.LightningDataModule):
             self._print_contingency_table(test_df, stage_name="test")
             self.test_ds = AffectNetDataset(self.data_dir, df=test_df, transform=transform, return_metadata=True)
 
-    # Funcion de balanceo 50/50 en género
-    def _apply_strict_balance(self, df):
-
-        df = df.copy()
-        df['gender_male_bin'] = (df['gender_male'] > 0.5).astype(int)
-        df['gender_female_bin'] = (df['gender_female'] > 0.5).astype(int)
-        
-        final_dfs = []
-        classes = df['human_label'].unique()
-
-        for label in classes:
-            available_women = df[(df['human_label'] == label) & (df['gender_female_bin'] == 1)]
-            available_men = df[(df['human_label'] == label) & (df['gender_male_bin'] == 1)]
-
-            n_limit = min(len(available_women), len(available_men))
-
-            if n_limit > 0:
-                sampled_women = available_women.sample(n=n_limit, random_state=42)
-                sampled_men = available_men.sample(n=n_limit, random_state=42)
-                final_dfs.extend([sampled_women, sampled_men])
-            else:
-                print(f" la clase {label} ha sido excluida por falta de representantes de un género.")
-
-        # Mezclar el dataset final
-        return pd.concat(final_dfs).sample(frac=1, random_state=42).reset_index(drop=True)
-    
-    def _apply_expression_balance(self, df):
-        df = df.copy()
-        
-        # 1. Encontrar el "Máximo de los Mínimos"
-        # Contamos cuántas imágenes hay por cada emoción y nos quedamos con la cifra más baja
-        counts = df['human_label'].value_counts()
-        n_limit = counts.min()
-        
-        print(f"--- Balanceando dataset ---")
-        print(f"Mínimo común encontrado: {n_limit} muestras por clase.")
-        
-        final_dfs = []
-        classes = df['human_label'].unique()
-
-        # 2. Samplear n_limit para cada clase
-        for label in classes:
-            # Filtramos por emoción y sacamos exactamente n_limit muestras
-            sampled_class = df[df['human_label'] == label].sample(n=n_limit, random_state=42)
-            final_dfs.append(sampled_class)
-
-        # 3. Concatenar, barajar y resetear índice
-        df_balanced = pd.concat(final_dfs).sample(frac=1, random_state=42).reset_index(drop=True)
-        
-        print(f"Dataset final balanceado: {len(df_balanced)} imágenes totales.")
-        return df_balanced
-    
-
-    def _apply_expression_balance_with_gender_prior(self, df):
+    def _apply_expression_balance_with_gender_prior(self, df:pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
 
         if 'gender_female_bin' not in df.columns:
@@ -190,7 +128,7 @@ class AffectNetDataModule(L.LightningDataModule):
         return df_balanced
 
 
-    def _print_contingency_table(self, df, stage_name="train"):
+    def _print_contingency_table(self, df:pd.DataFrame, stage_name:str="train") -> None:
         print(f"\nContingency table for {stage_name}: Strict Balance (Emotions & Gender)")
         gender_series = df['gender_male_bin'].apply(lambda x: 'Male' if x == 1 else 'Female')
         ct = pd.crosstab(df['human_label'], gender_series)
@@ -201,11 +139,11 @@ class AffectNetDataModule(L.LightningDataModule):
         filename = f"{log_dir}/{stage_name}_dist_balanced.csv"
         ct.to_csv(filename)
     
-    def train_dataloader(self):
+    def train_dataloader(self) -> DataLoader:
         return DataLoader(self.train_ds, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True)
     
-    def val_dataloader(self):
+    def val_dataloader(self) -> DataLoader:
         return DataLoader(self.val_ds, batch_size=self.batch_size, num_workers=self.num_workers)
     
-    def test_dataloader(self):
+    def test_dataloader(self) -> DataLoader:
         return DataLoader(self.test_ds, batch_size=self.batch_size, num_workers=self.num_workers)

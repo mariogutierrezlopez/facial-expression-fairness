@@ -36,7 +36,7 @@ class MultiPIEDataModule(L.LightningDataModule):
         self.n_limit = n_limit
 
     # Función obligatoria de DataModule, settea la distribución de datos
-    def setup(self, stage):
+    def setup(self, stage) -> None:
         raw_df = pd.read_csv(self.csv_path)
 
         # Convertir softlabels género en [1, 0]
@@ -96,7 +96,7 @@ class MultiPIEDataModule(L.LightningDataModule):
             self.test_ds = MultiPIEDataset(self.data_dir, df=test_df, transform=transform)
 
     # FUNCION PARA OBTENER DATASET BALANCEADO CON LA CLASE MAS BAJA
-    def _apply_experiment_bias(self, df):
+    def _apply_experiment_bias(self, df: pd.DataFrame) -> pd.DataFrame:
         final_dfs = []
         classes = df['temp_label'].unique()
 
@@ -128,7 +128,7 @@ class MultiPIEDataModule(L.LightningDataModule):
 
         return pd.concat(final_dfs).sample(frac=1, random_state=42).reset_index(drop=True)
     
-    def _apply_balanced_evaluation(self, df):
+    def _apply_balanced_evaluation(self, df:pd.DataFrame) -> pd.DataFrame:
         """
         Fuerza a que los conjuntos de validación y test sean exactamente
         50/50 (hombre/mujer) oara cada expresión        
@@ -150,9 +150,10 @@ class MultiPIEDataModule(L.LightningDataModule):
                 final_dfs.extend([sampled_women, sampled_men])
 
         return pd.concat(final_dfs).sample(frac=1, random_state=42).reset_index(drop=True)
+    
     # ESTA FUNCION DE MOMENTO NO SE USA
     # Esta funcion calcula el número máximo de elementos que puede haber por clase que satisfaga el ratio de género
-    def _apply_experiment_bias_unbalanced_expr(self, df):
+    def _apply_experiment_bias_unbalanced_expr(self, df:pd.DataFrame) -> pd.DataFrame:
 
         final_dfs = []
         classes = df['temp_label'].unique()
@@ -211,7 +212,7 @@ class MultiPIEDataModule(L.LightningDataModule):
         return pd.concat(final_dfs).sample(frac=1, random_state=42).reset_index(drop=True)
     
     # Print para ver los parámetros del experimento y la tabla con los géneros y labels
-    def _print_contingency_table(self, df, stage_name="train"):
+    def _print_contingency_table(self, df, stage_name="train") -> None:
         print(f"Contingency table: {self.bias_type}, f={self.bias_factor}")
         ct = pd.crosstab(df['temp_label'], df['gender'])
         print(ct)
@@ -225,12 +226,12 @@ class MultiPIEDataModule(L.LightningDataModule):
         ct.to_csv(filename)
 
     # Funciones del DataModule
-    def train_dataloader(self):
+    def train_dataloader(self) -> DataLoader:
         return DataLoader(self.train_ds, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True)
     
-    def val_dataloader(self):
+    def val_dataloader(self) -> DataLoader:
         return DataLoader(self.val_ds, batch_size=self.batch_size, num_workers=self.num_workers)
     
-    def test_dataloader(self):
+    def test_dataloader(self) -> DataLoader:
         return DataLoader(self.test_ds, batch_size=self.batch_size, num_workers=self.num_workers)
     
