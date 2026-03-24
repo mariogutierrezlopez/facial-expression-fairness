@@ -111,9 +111,13 @@ class ResNet50(L.LightningModule):
     
     def test_step(self, batch, batch_idx):
         x, y = batch["image"], batch["target"]
-        gender_male = batch["meta"]["gender_male"]
-        gender_female = batch["meta"]["gender_female"]
-        illumination = batch["meta"]["illumination"]
+
+        meta = batch.get("meta", {})
+
+        gender_male = meta.get("gender_male", torch.ones_like(y) * -1)
+        gender_female = meta.get("gender_female", torch.ones_like(y) * -1)
+        illumination = meta.get("illumination", (torch.ones_like(y).float() * -1))
+
 
         logits, embeddings = self(x, return_embeddings=True)
         loss = self.loss(logits, y)
@@ -167,22 +171,24 @@ class ResNet50(L.LightningModule):
             all_male = torch.cat([x["gender_male"] for x in self.test_step_outputs])
             all_female = torch.cat([x["gender_female"] for x in self.test_step_outputs])
 
-            for c in range(self.n_outputs):
-                # 1. Calcular para Hombres (gender_male == 1)
-                mask_male = (all_targets == c) & (all_male == 1)
-                if mask_male.any():
-                    subset_preds = all_preds[mask_male]
-                    subset_targets = all_targets[mask_male]
-                    recall = (subset_preds == subset_targets).sum().item() / len(subset_targets)
-                    self.log(f"test_recall_class_{c}_MALE", recall)
+            # Control para affwild2 (no tiene etiquetas de género)
+            if (all_male != -1).any():
+                for c in range(self.n_outputs):
+                    # 1. Calcular para Hombres (gender_male == 1)
+                    mask_male = (all_targets == c) & (all_male == 1)
+                    if mask_male.any():
+                        subset_preds = all_preds[mask_male]
+                        subset_targets = all_targets[mask_male]
+                        recall = (subset_preds == subset_targets).sum().item() / len(subset_targets)
+                        self.log(f"test_recall_class_{c}_MALE", recall)
 
-                # 2. Calcular para Mujeres (gender_female == 1)
-                mask_female = (all_targets == c) & (all_female == 1)
-                if mask_female.any():
-                    subset_preds = all_preds[mask_female]
-                    subset_targets = all_targets[mask_female]
-                    recall = (subset_preds == subset_targets).sum().item() / len(subset_targets)
-                    self.log(f"test_recall_class_{c}_FEMALE", recall)
+                    # 2. Calcular para Mujeres (gender_female == 1)
+                    mask_female = (all_targets == c) & (all_female == 1)
+                    if mask_female.any():
+                        subset_preds = all_preds[mask_female]
+                        subset_targets = all_targets[mask_female]
+                        recall = (subset_preds == subset_targets).sum().item() / len(subset_targets)
+                        self.log(f"test_recall_class_{c}_FEMALE", recall)
 
 
             # Guardar los tensores para el análisis de distancias

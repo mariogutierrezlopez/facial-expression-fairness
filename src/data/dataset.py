@@ -206,16 +206,16 @@ class AffWild2Dataset(VisionDataset):
         # Lógica para devolver metadatos:
         if self.return_metadata:
             demographics = {
-                'video': row['video'],
-                'frame_idx': row['frame_idx'],
-                'subject': row['subject'],
-                'split': row['split'],
-                'yaw': row['yaw'],
-                'pitch': row['pitch'],
-                'roll': row['roll'],
-                'ethnicity': row['ethnicity'],
-                'gender': row['gender'],
-                'age': row['age'],
+                # 'video': row['video'],
+                # 'frame_idx': row['frame_idx'],
+                # 'subject': row['subject'],
+                # 'split': row['split'],
+                # 'yaw': row['yaw'],
+                # 'pitch': row['pitch'],
+                # 'roll': row['roll'],
+                # 'ethnicity': row['ethnicity'],
+                # 'gender': row['gender'],
+                # 'age': row['age'],
                 'illumination': row['illumination']
             }
 
