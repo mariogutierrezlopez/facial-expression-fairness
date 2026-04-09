@@ -56,7 +56,7 @@ def process_and_plot():
             plt.figure()
             sns.histplot(combined['FSB'], kde=True, color='skyblue', stat="density")
             plt.title(f'Distribución FSB - {name}')
-            plt.savefig(f'distribucion_fsb_{name.lower()}.pdf')
+            plt.savefig(f'distribucion_fsb_{name.lower()}.svg')
             plt.close()
 
     plt.figure(figsize=(14, 7))
@@ -71,7 +71,7 @@ def process_and_plot():
     plt.xlim(0, 255)
     plt.legend()
     plt.tight_layout()
-    plt.savefig('distribucion_fsb.pdf', dpi=300)
+    plt.savefig('distribucion_fsb.svg', dpi=300)
     
     df_stats = pd.DataFrame(stats_list)
     print("\n" + "="*50)

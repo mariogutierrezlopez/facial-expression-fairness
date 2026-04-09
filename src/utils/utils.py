@@ -80,23 +80,23 @@ def generate_labels(df):
     def map_row(row):
         # Convert to string once to ensure matching
         session = str(row['session_id'])
-        rec = row['recording_id']
+        rec = int(row['recording_id'])
 
-        if rec == 1: 
-            return 0  # Neutral
-        
-        # Session-specific logic
         if 'session01' in session:
-            if rec == 2: return 1  # Smile
-        elif 'session02' in session:
-            if rec == 2: return 2  # Surprise
-            if rec == 3: return 3  # Squint
-        elif 'session03' in session:
-            if rec == 2: return 1  # Smile
-            if rec == 3: return 4  # Disgust
-        elif 'session04' in session:
-            if rec == 2: return 5  # Scream
-            if rec == 3: return 0  # Neutral
+            if rec == 1: return 0 # Neutral
+            if rec == 2: return 1 # Smile
+        if 'session02' in session:
+            if rec == 1: return 0 # Neutral
+            if rec == 2: return 2 # Surprise
+            if rec == 3: return 3 # Squint
+        if 'session03' in session:
+            if rec == 1: return 0 # Neutral
+            if rec == 2: return 1 # Smile
+            if rec == 3: return 4 # Disgust
+        if 'session04' in session:
+            if rec == 1: return 0 # Neutral
+            if rec == 2: return 0 # Neutral
+            if rec == 3: return 5 # Scream
             
         return -1
 

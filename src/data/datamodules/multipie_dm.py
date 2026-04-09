@@ -39,10 +39,6 @@ class MultiPIEDataModule(L.LightningDataModule):
     def setup(self, stage) -> None:
         raw_df = pd.read_csv(self.csv_path)
 
-        # Convertir softlabels género en [1, 0]
-        raw_df['gender_male'] = (raw_df['gender_male'] > 0.5).astype(int)
-        raw_df['gender_female'] = (raw_df['gender_female'] > 0.5).astype(int) 
-
         temps_ds = MultiPIEDataset(self.data_dir, df=raw_df)
         full_df = temps_ds.df
         # Obtener sujetos únicos y género para estratificar por persona
@@ -218,8 +214,10 @@ class MultiPIEDataModule(L.LightningDataModule):
         print(ct)
 
         # Guardar tabla en un csv
-        log_dir = f"dataset_logs_fase2-c{self.target_class}"
+        t_class = self.target_class if self.target_class is not None else "all"
+        log_dir = f"dataset_logs_fase2-c{t_class}"
         os.makedirs(log_dir, exist_ok=True)
+        
 
         filename = f"{log_dir}/{stage_name}_dist_{self.bias_type}_f{self.bias_factor}.csv"
 

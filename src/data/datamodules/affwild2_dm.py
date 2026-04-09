@@ -85,8 +85,13 @@ class AffWild2DatModule(L.LightningDataModule):
 
         df = df.copy()
 
-        df_limited = df.groupby(['expr', 'subject'], group_keys=False).apply(
-            lambda x: x.sample(n=min(len(x), max_frames_per_subject), random_state=42)
+        # Extraer el sujeto desde la ruta (ej: 1-30-1280x720/0001.jpg -> 1-30-1280-720)
+        df['real_subject'] = df['image_path'].apply(lambda x: os.path.basename(os.path.dirname(x)))
+
+        # Limitar frames por sujeto
+        df_limited = df.groupby(['expr', 'real_subject'], group_keys=False).apply(
+            lambda x: x.sample(n=min(len(x), max_frames_per_subject), random_state=42),
+            include_groups=True
         ).reset_index(drop=True)
 
         # Calcular el mínimo de muestras por emoción para limitar el dataset a ese valor `target_n``
@@ -142,7 +147,6 @@ class AffWild2DatModule(L.LightningDataModule):
         
         counts = df['expr'].value_counts().sort_index()
         print(counts)
-        # Lo guardamos en CSV por si quieres graficarlo luego
         log_dir = "affwild2_logs_baseline"
         os.makedirs(log_dir, exist_ok=True)
         filename = f"{log_dir}/{stage_name}_dist_expression.csv"

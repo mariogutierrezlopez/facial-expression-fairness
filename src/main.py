@@ -17,8 +17,8 @@ from lightning.pytorch.callbacks import ModelCheckpoint
 import wandb
 
 # --- CONFIGURACIÓN MULTIPIE ---
-MPIE_DATA_DIR = "/home12TB1/database/recognition/faces/MultiPie/data/"
-MPIE_CSV_PATH = "/home12TB1/database/recognition/faces/MultiPie/demographic_info_cropped.csv"
+MPIE_DATA_DIR = "/home12TB1/database/recognition/faces/Multi-Pie/data/"
+MPIE_CSV_PATH = "/home12TB1/database/recognition/faces/Multi-Pie/demographic_labels.csv"
 
 # --- CONFIGURACIÓN AFFECTNET ---
 AFFNET_DATA_DIR = "/home12TB1/database/recognition/faces/affectnet/"
@@ -69,7 +69,7 @@ def run_multipie_experiment(exp_name, bias_type, bias_factor, n_limit, target_cl
 
     logger = WandbLogger(
         name=exp_name,
-        project="MultiPIE_Stereotypical_All_Classes",
+        project="MultiPIE_Stereotypical_All_Classes_correct",
         log_model="all",
     )
 
@@ -200,6 +200,19 @@ if __name__ == "__main__":
         print("LANZANDO EXPERIMENTOS MULTIPIE")
         n_limit_repres, n_limit_stereo = calc_nlimits(MPIE_CSV_PATH, BIAS_FACTORS)
         
+        print("Fase 1: Sesgo representacional")
+        for f in BIAS_FACTORS:
+            run_multipie_experiment(
+                exp_name=f"Representational_bias_f{f}",
+                bias_type="representational",
+                bias_factor=f,
+                target_class=None,
+                n_limit=n_limit_repres,
+                test_only=args.test_only,
+                ckpt_path=args.ckpt_path
+            )
+        
+        print("Fase 2: Sesgo estereotípico")
         TARGET_CLASS_IDS = [0,1,2,3,4,5]
         for target_id in TARGET_CLASS_IDS:
             for f in BIAS_FACTORS:
