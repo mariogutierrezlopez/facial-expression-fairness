@@ -189,14 +189,19 @@ class ResNet50(L.LightningModule):
                         subset_targets = all_targets[mask_female]
                         recall = (subset_preds == subset_targets).sum().item() / len(subset_targets)
                         self.log(f"test_recall_class_{c}_FEMALE", recall)
-
+            
+            # Información de género para embeddings
+            gender_combined = torch.zeros_like(all_targets)
+            gender_combined[all_male == 1] = 0
+            gender_combined[all_female == 1] = 1
 
             # Guardar los tensores para el análisis de distancias
             torch.save({
                 'embeddings': all_embeddings,
                 'targets': all_targets,
                 'preds': all_preds,
-                'illumination': all_illumination
+                'illumination': all_illumination,
+                'gender': gender_combined.cpu()
             }, f'test_embeddings_results_{self.dataset_name}.pt')
             print(f"Embeddings guardados en test_embeddings_results_{self.dataset_name}.pt")
 

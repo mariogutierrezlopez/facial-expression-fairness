@@ -81,15 +81,15 @@ class MultiPIEDataModule(L.LightningDataModule):
             raw_val_df = full_df[full_df['subject_id'].isin(val_subs['subject_id'])]
             val_df = self._apply_balanced_evaluation(raw_val_df)
     
-            self.train_ds = MultiPIEDataset(self.data_dir, df=train_df, transform=transform)
-            self.val_ds = MultiPIEDataset(self.data_dir, df=val_df, transform=transform)
+            self.train_ds = MultiPIEDataset(self.data_dir, df=train_df, transform=transform, return_metadata=True)
+            self.val_ds = MultiPIEDataset(self.data_dir, df=val_df, transform=transform, return_metadata=True)
         
         if stage == "test":
 
             raw_test_df = full_df[full_df['subject_id'].isin(test_subs['subject_id'])]
             test_df = self._apply_balanced_evaluation(raw_test_df)
             self._print_contingency_table(test_df, stage_name="test")
-            self.test_ds = MultiPIEDataset(self.data_dir, df=test_df, transform=transform)
+            self.test_ds = MultiPIEDataset(self.data_dir, df=test_df, transform=transform, return_metadata=True)
 
     # FUNCION PARA OBTENER DATASET BALANCEADO CON LA CLASE MAS BAJA
     def _apply_experiment_bias(self, df: pd.DataFrame) -> pd.DataFrame:

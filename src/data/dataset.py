@@ -9,12 +9,15 @@ import os
 from src.utils.utils import generate_labels
 class MultiPIEDataset(VisionDataset):
 
-    def __init__(self, root, df, transform=None, target_transform = None):
+    def __init__(self, root, df, transform=None, target_transform = None, return_metadata=False):
         super().__init__(root, transform=transform, target_transform=target_transform)
         self.root = root
-        # print(f"El archivo {root} existe: {os.path.exists(root)}")
-        # print(f"Datagrame: {df}")
-        # print(f"Columnas del df{df.columns}")
+
+
+        # Este parámetro maneja la información que se devuelve por cada objeto en el __getitem__()
+        #   train/val -> False | Solo se devuelve la imagen y la clase objetivo
+        #   train/val -> True | Además de la imagen y el target, se devuelven los metadatos (edad, género, raza, iluminación...)
+        self.return_metadata = return_metadata
 
 
         processed_df = generate_labels(df)
@@ -50,6 +53,8 @@ class MultiPIEDataset(VisionDataset):
 
         demographics = {
             'gender': row['gender'],
+            'gender_male': 1 if row['gender'] == 'Male' else 0,
+            'gender_female': 1 if row['gender'] == 'Female' else 0,
             'ethnicity': row['ethnicity'],
             'age': row['age'],
             'camera_id': row['camera_id']
@@ -62,11 +67,17 @@ class MultiPIEDataset(VisionDataset):
         if self.target_transform is not None:
             target = self.target_transform(target)
         
-        return {
-            'image': image,
-            'target': target,
-            'meta': demographics
-        }
+        if self.return_metadata:
+            return {
+                'image': image,
+                'target': target,
+                'meta': demographics
+            }
+        else:
+            return{
+                'image': image,
+                'target': target,
+            }
 
 class AffectNetDataset(VisionDataset):
     
