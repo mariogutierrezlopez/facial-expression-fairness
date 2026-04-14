@@ -127,26 +127,32 @@ class MultiPIEDataModule(L.LightningDataModule):
     def _apply_balanced_evaluation(self, df:pd.DataFrame) -> pd.DataFrame:
         """
         Fuerza a que los conjuntos de validación y test sean exactamente
-        50/50 (hombre/mujer) oara cada expresión        
+        50/50 (hombre/mujer) para cada expresion, además, las expresiones estarán balanceadas
         :param df: Dataframe
         """
         final_dfs = []
         classes = df['temp_label'].unique()
 
+        global_min_limit = 99999999
         for label in classes:
-            available_women = df[(df['temp_label'] == label) & (df['gender'] == 'Female')]
-            available_men = df[(df['temp_label'] == label) & (df['gender'] == 'Male')]
+            n_women = len(df[(df['temp_label'] == label) & (df['gender'] == 'Female')])
+            n_men = len(df[(df['temp_label'] == label) & (df['gender'] == 'Male')])
+            local_limit = min(n_women, n_men)
+            if local_limit < global_min_limit:
+                global_min_limit = local_limit
 
-            # n_limit de la clase en test/val
-            n_limit = min(len(available_women), len(available_men))
+        # 2. Aplicar ese límite estricto a TODAS las clases
+        if global_min_limit > 0:
+            for label in classes:
+                available_women = df[(df['temp_label'] == label) & (df['gender'] == 'Female')]
+                available_men = df[(df['temp_label'] == label) & (df['gender'] == 'Male')]
 
-            if n_limit > 0:
-                sampled_women = available_women.sample(n=n_limit, random_state=42)
-                sampled_men = available_men.sample(n=n_limit, random_state=42)
+                sampled_women = available_women.sample(n=global_min_limit, random_state=42)
+                sampled_men = available_men.sample(n=global_min_limit, random_state=42)
                 final_dfs.extend([sampled_women, sampled_men])
 
         return pd.concat(final_dfs).sample(frac=1, random_state=42).reset_index(drop=True)
-    
+
     # ESTA FUNCION DE MOMENTO NO SE USA
     # Esta funcion calcula el número máximo de elementos que puede haber por clase que satisfaga el ratio de género
     def _apply_experiment_bias_unbalanced_expr(self, df:pd.DataFrame) -> pd.DataFrame:

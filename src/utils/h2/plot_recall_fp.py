@@ -9,9 +9,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
+import json
 
 # Variables proyecto wandb
-WANDB_PROJECT = "mariogutierrezlopez-upm/MultiPIE_Stereotypical_All_Classes"
+WANDB_PROJECT = "mariogutierrezlopez-upm/MultiPIE_test"
 CLASS_NAMES = ["Neutral", "Smile", "Surprise", "Squint", "Disgust", "Scream"]
 
 # Estilos gráficas
@@ -20,26 +21,38 @@ plt.rcParams['font.family'] = 'serif'
 COLOR_PALETTE = sns.color_palette("husl", len(CLASS_NAMES))
 COLOR_DICT = {i: COLOR_PALETTE[i] for i in range(len(CLASS_NAMES))}
 
-# Tengo guardados la matriz de confusion en forma de logs en cada entrenamiento dentro de wand, esta función obtiene los valores de esta matriz de confusion
-def parse_confusion_matrix_from_text(log_text):
-
-    clean_text = re.sub(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}', '', log_text)
-
-    match = re.search(r'tensor\(\[\[(.*?)\]\]', clean_text, re.DOTALL)
-    if not match:
-        return None
+def get_confusion_matrix_from_wandb(run):
+    """Busca y lee la tabla de la matriz de confusión directamente de los archivos de W&B."""
     
-    tensor_body = match.group(1)
+    for file in run.files():
+        if "test_confusion_matrix" in file.name and file.name.endswith(".json"):
+            
+            # Descargamos el JSON temporalmente
+            file.download(replace=True, root="./temp_logs")
+            file_path = os.path.join("./temp_logs", file.name)
+            
+            with open(file_path, "r", encoding="utf-8") as f:
+                table_data = json.load(f)
+            
+            cm = np.zeros((len(CLASS_NAMES), len(CLASS_NAMES)))
+            
+            if "columns" in table_data and "Actual" in table_data["columns"]:
+                for row in table_data["data"]:
+                    actual, predicted, count = row[0], row[1], row[2]
+                    
+                    # Convertir el nombre de la clase (String) al índice numérico
+                    if isinstance(actual, str):
+                        actual = CLASS_NAMES.index(actual)
+                    if isinstance(predicted, str):
+                        predicted = CLASS_NAMES.index(predicted)
+                        
+                    cm[actual, predicted] = count
+                return cm
+            
+                
+    return None
 
-    numbers = re.findall(r'\d+', tensor_body)
-    if not numbers:
-        return None
-        
-    numbers = [int(n) for n in numbers]
-    n_classes = int(np.sqrt(len(numbers)))
-    
-    cm = np.array(numbers).reshape((n_classes, n_classes))
-    return cm
+
 
 def main():
     print("Conectando a wandb")
@@ -62,22 +75,23 @@ def main():
             print(f"Procesando run {run.name}")
             
             try:
-                # Descargar el log de la consola
-                log_file = run.file("output.log").download(replace=True, root="./temp_logs")
-                with open("./temp_logs/output.log", "r", encoding="utf-8") as f:
-                    log_text = f.read()
-                
-                cm = parse_confusion_matrix_from_text(log_text)
-                
+                # Intento 1: Leer el JSON limpio nativo de W&B (El método nuevo)
+                cm = get_confusion_matrix_from_wandb(run)
+
+                # Guardado final de la matriz
                 if cm is not None:
+                    print(f"\n--- Matriz extraída para {run.name} ---")
+                    print(cm)
+                    print(f"Total muestras en esta matriz: {np.sum(cm)}")
+                    
                     if c_idx not in data_by_class:
                         data_by_class[c_idx] = []
                     data_by_class[c_idx].append((f_val, cm))
                 else:
-                    print(f"No se encontró matriz en {run.name}")
+                    print(f"⚠️ No se encontró matriz (ni JSON ni log) en {run.name}")
                     
             except Exception as e:
-                print(f"Error descargando log de {run.name}: {e}")
+                print(f"Error descargando datos de {run.name}: {e}")
     
 
     # GENERACION DE GRÁFICAS

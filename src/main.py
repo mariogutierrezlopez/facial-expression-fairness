@@ -69,7 +69,7 @@ def run_multipie_experiment(exp_name, bias_type, bias_factor, n_limit, target_cl
 
     logger = WandbLogger(
         name=exp_name,
-        project="MultiPIE_Stereotypical_All_Classes_correct",
+        project="MultiPIE_test",
         log_model="all",
     )
 
@@ -193,8 +193,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    if args.test_only and args.ckpt_path is None:
-        parser.error("Si usas --test_only necesitas especificar la ruta del checkpoint")
+    # if args.test_only and args.ckpt_path is None:
+    #     parser.error("Si usas --test_only necesitas especificar la ruta del checkpoint")
 
     if args.dataset == "multipie":
         print("LANZANDO EXPERIMENTOS MULTIPIE")
@@ -202,6 +202,8 @@ if __name__ == "__main__":
         
         print("Fase 1: Sesgo representacional")
         for f in BIAS_FACTORS:
+            exp_name = f"Representational_bias_f{f}"
+            current_ckpt = f"checkpoints/{exp_name}/last.ckpt" if args.test_only else args.ckpt_path
             run_multipie_experiment(
                 exp_name=f"Representational_bias_f{f}",
                 bias_type="representational",
@@ -209,13 +211,15 @@ if __name__ == "__main__":
                 target_class=None,
                 n_limit=n_limit_repres,
                 test_only=args.test_only,
-                ckpt_path=args.ckpt_path
+                ckpt_path=current_ckpt
             )
         
         print("Fase 2: Sesgo estereotípico")
         TARGET_CLASS_IDS = [0,1,2,3,4,5]
         for target_id in TARGET_CLASS_IDS:
             for f in BIAS_FACTORS:
+                exp_name = f"Stereotipical_bias_c{target_id}_f{f}"
+                current_ckpt = f"checkpoints/{exp_name}/last.ckpt" if args.test_only else args.ckpt_path
                 run_multipie_experiment(
                     exp_name=f"Stereotipical_bias_c{target_id}_f{f}",
                     bias_type="stereotipical",
@@ -223,7 +227,7 @@ if __name__ == "__main__":
                     target_class=target_id,
                     n_limit=n_limit_stereo,
                     test_only=args.test_only,
-                    ckpt_path=args.ckpt_path
+                    ckpt_path=current_ckpt
                 )
     
     elif args.dataset == "affectnet":

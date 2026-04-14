@@ -10,6 +10,12 @@ import torchmetrics
 from torchmetrics import ConfusionMatrix
 import torch
 from torch.optim.lr_scheduler import OneCycleLR
+import wandb
+
+#Gradcam
+from pytorch_grad_cam import GradCAM
+from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
+from pytorch_grad_cam.utils.image import show_cam_on_image
 
 from src.utils.losses import FocalLoss
         
@@ -150,7 +156,10 @@ class ResNet50(L.LightningModule):
 
         #OUTPUT CONF MATRIX
         print("Matrix de confusión\n")
-        print(self.conf_matrix.compute())
+        final_conf_matrix = self.conf_matrix.compute()
+        print(final_conf_matrix)
+        
+        print("Matriz guardada nativamente en WandB.")
 
         #OUTPUT RECALL METRICS
         per_class = self.test_recall_per_class.compute()
@@ -163,6 +172,18 @@ class ResNet50(L.LightningModule):
         if len(self.test_step_outputs) > 0:
             all_preds = torch.cat([x["preds"] for x in self.test_step_outputs])
             all_targets = torch.cat([x["targets"] for x in self.test_step_outputs])
+
+            if self.dataset_name == "MultiPIE":
+                class_names = ["Neutral", "Smile", "Surprise", "Squint", "Disgust", "Scream"]
+                wandb.log({
+                    "test_confusion_matrix": wandb.plot.confusion_matrix(
+                        probs=None,
+                        y_true=all_targets.tolist(),
+                        preds=all_preds.tolist(),
+                        class_names=class_names
+                    )
+                })
+                print("Matriz interactiva guardada en WandB.")
 
             all_embeddings = torch.cat([x["embeddings"] for x in self.test_step_outputs])
             all_illumination = torch.cat([x["illumination"] for x in self.test_step_outputs])
@@ -236,3 +257,33 @@ class ResNet50(L.LightningModule):
                 "frequency": 1
             }
         }
+
+    # GRAD-CAM
+
+    def get_gradcam(self, x, target_category=None):
+        target_layers = [self.model.layer4[-1]]
+            
+        cam = GradCAM(model=self, target_layers=target_layers)
+        
+        # Si no se especifica clase, explicar la predicción del modelo
+        targets = [ClassifierOutputTarget(target_category)] if target_category is not None else None
+        
+        # Generar el mapa (grayscale)
+        grayscale_cam = cam(input_tensor=x, targets=targets) # type: ignore
+        grayscale_cam = grayscale_cam[0, :]
+        
+        return grayscale_cam
+
+    def visualize_gradcam(self, x, target_category=None):
+            """
+            Devuelve una imagen RGB con el mapa de calor superpuesto
+            """
+            self.eval()
+            grayscale_cam = self.get_gradcam(x, target_category)
+            
+            # Preparar la imagen original para visualización, hay que des-normalizarla o pasarla a [0, 1] y HWC
+            img_np = x.squeeze(0).permute(1, 2, 0).cpu().numpy()
+            img_np = (img_np - img_np.min()) / (img_np.max() - img_np.min())
+            
+            visualization = show_cam_on_image(img_np, grayscale_cam, use_rgb=True)
+            return visualization
