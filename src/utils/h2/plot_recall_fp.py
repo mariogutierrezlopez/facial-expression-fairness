@@ -133,6 +133,7 @@ def main():
             
         plt.title(f'Error Distribution under Bias Variation - Target: {target_name}', fontweight='bold', fontsize=16)
         plt.xlabel(r'Bias Factor ($f$)')
+        plt.ylim(0,0.15)
         plt.ylabel('False Negative Proportion')
         
         plt.xticks([0.0, 0.25, 0.5, 0.75, 1.0])
@@ -140,8 +141,8 @@ def main():
         plt.legend(title="Misclassified as", bbox_to_anchor=(1.05, 1), loc='upper left', frameon=True)
         
         plt.tight_layout()
-        filename = f'error_distribution_stereo_c{c_idx}_{target_name}.svg'
-        plt.savefig(filename, format="svg", bbox_inches="tight")
+        filename = f'error_distribution_stereo_c{c_idx}_{target_name}.pdf'
+        plt.savefig(filename, format="pdf", bbox_inches="tight")
         plt.close()
         
         print(f"Guardada gráfica: {filename}")

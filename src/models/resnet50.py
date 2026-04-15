@@ -11,9 +11,11 @@ from torchmetrics import ConfusionMatrix
 import torch
 from torch.optim.lr_scheduler import OneCycleLR
 import wandb
+import cv2
+import numpy as np
 
 #Gradcam
-from pytorch_grad_cam import GradCAM
+from pytorch_grad_cam import GuidedBackpropReLUModel, LayerCAM
 from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 from pytorch_grad_cam.utils.image import show_cam_on_image
 
@@ -261,29 +263,45 @@ class ResNet50(L.LightningModule):
     # GRAD-CAM
 
     def get_gradcam(self, x, target_category=None):
-        target_layers = [self.model.layer4[-1]]
+        target_layers = [self.model.layer3[-1], self.model.layer4[-1]]
             
-        cam = GradCAM(model=self, target_layers=target_layers)
+        cam = LayerCAM(model=self, target_layers=target_layers)
         
         # Si no se especifica clase, explicar la predicción del modelo
         targets = [ClassifierOutputTarget(target_category)] if target_category is not None else None
         
         # Generar el mapa (grayscale)
-        grayscale_cam = cam(input_tensor=x, targets=targets) # type: ignore
+        grayscale_cam = cam(input_tensor=x, targets=targets, aug_smooth=True, eigen_smooth=True) # type: ignore
         grayscale_cam = grayscale_cam[0, :]
         
         return grayscale_cam
 
     def visualize_gradcam(self, x, target_category=None):
-            """
-            Devuelve una imagen RGB con el mapa de calor superpuesto
-            """
-            self.eval()
-            grayscale_cam = self.get_gradcam(x, target_category)
-            
-            # Preparar la imagen original para visualización, hay que des-normalizarla o pasarla a [0, 1] y HWC
-            img_np = x.squeeze(0).permute(1, 2, 0).cpu().numpy()
-            img_np = (img_np - img_np.min()) / (img_np.max() - img_np.min())
-            
-            visualization = show_cam_on_image(img_np, grayscale_cam, use_rgb=True)
-            return visualization
+        """
+        Devuelve una imagen RGB con el mapa de calor superpuesto
+        """
+        self.eval()
+        grayscale_cam = self.get_gradcam(x, target_category)
+        
+        # Preparar la imagen original para visualización, hay que des-normalizarla o pasarla a [0, 1] y HWC
+        img_np = x.squeeze(0).permute(1, 2, 0).cpu().numpy()
+        img_np = (img_np - img_np.min()) / (img_np.max() - img_np.min())
+        
+        visualization = show_cam_on_image(img_np, grayscale_cam, use_rgb=True)
+        return visualization
+
+    def visualize_guided_gradcam(self, x, target_category=None):
+        self.eval()
+
+        grayscale_cam = self.get_gradcam(x, target_category)
+        
+        gb_model = GuidedBackpropReLUModel(model=self, device=self.device)
+        
+        gb = gb_model(input_img=x, target_category=target_category)
+        
+        cam_mask = cv2.merge([grayscale_cam, grayscale_cam, grayscale_cam])
+        cam_gb = gb * cam_mask
+        
+        cam_gb = (cam_gb - np.min(cam_gb)) / (np.max(cam_gb) - np.min(cam_gb) + 1e-7)
+        
+        return cam_gb
