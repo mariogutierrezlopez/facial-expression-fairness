@@ -41,6 +41,15 @@ N_OUTPUTS_AFFNET = 8
 N_OUTPUTS_AFFWILD2 = 8
 BIAS_FACTORS = [0.0, 0.25, 0.5, 0.75, 1.0]
 
+# EXPERIMENTO ALTERACIÓN BRIGHTNESS
+brightness_variants = {
+    "normal": 1.0,
+    "m25": 0.75,
+    "m50": 0.50,
+    "p25": 1.25,
+    "p50": 1.50
+}
+
 # class weights focal loss
 num_samples = [17114, 45567, 5037, 3618, 1454, 599, 2303, 908]
 total = sum(num_samples)
@@ -97,7 +106,7 @@ def run_multipie_experiment(exp_name, bias_type, bias_factor, n_limit, target_cl
     wandb.finish()
 
 # AFFECTNET
-def run_affectnet_baseline(test_only=False, ckpt_path=None):
+def run_affectnet_baseline(test_only=False, ckpt_path=None, brightness=False):
     exp_name = "AffectNet_fl_balanced"
     if wandb.run is not None: wandb.finish()
 
@@ -106,7 +115,7 @@ def run_affectnet_baseline(test_only=False, ckpt_path=None):
         csv_train_path=AFFNET_CSV_TRAIN_PATH,
         csv_test_path=AFFNET_CSV_TEST_PATH, 
         batch_size=BATCH_SIZE,
-        num_workers=NUM_WORKERS
+        num_workers=NUM_WORKERS,
     )
     
     model = ResNet50(n_outputs=N_OUTPUTS_AFFNET, lr=LEARNING_RATE, weights_tensor=class_weights, dataset_name="Affectnet")
@@ -129,14 +138,27 @@ def run_affectnet_baseline(test_only=False, ckpt_path=None):
         print("Iniciando entrenamiento Baseline de AffectNet")
         trainer.fit(model=model, datamodule=data)
         trainer.test(model=model, datamodule=data, ckpt_path="best")
-    else:
+    elif not brightness:
         print(f"Iniciando test en AffectNet sobre el modelo {ckpt_path}")
         trainer.test(model=model, datamodule=data, ckpt_path=ckpt_path)
+    else:
+        print("Iniciando experimentos en AffectNet con variaciones de iluminación")
+        for variant_name, factor in brightness_variants.items():
+            data = AffectNetDataModule(
+                data_dir=AFFNET_DATA_DIR, 
+                csv_train_path=AFFNET_CSV_TRAIN_PATH,
+                csv_test_path=AFFNET_CSV_TEST_PATH, 
+                batch_size=BATCH_SIZE,
+                num_workers=NUM_WORKERS,
+                test_brightness_factor=factor
+            )
+            model.dataset_name = f"AffectNet_{variant_name}"
 
+            trainer.test(model, datamodule=data, ckpt_path=ckpt_path)
     wandb.finish()
 
 # AFFWILD2
-def run_affwild2_baseline(test_only=False, ckpt_path=None):
+def run_affwild2_baseline(test_only=False, ckpt_path=None, brightness=False):
     exp_name = "AffWild2_baseline"
     if wandb.run is not None: wandb.finish()
 
@@ -169,10 +191,10 @@ def run_affwild2_baseline(test_only=False, ckpt_path=None):
         print("Iniciando entrenamiento Baseline de Affwild2")
         trainer.fit(model=model, datamodule=data)
         trainer.test(model=model, datamodule=data, ckpt_path="best")
-    else:
+    elif not brightness:
         print(f"Iniciando test en AffWild2 sobre el modelo {ckpt_path}")
         trainer.test(model=model, datamodule=data, ckpt_path=ckpt_path)
-    
+
     wandb.finish()
 
 if __name__ == "__main__":
@@ -190,11 +212,14 @@ if __name__ == "__main__":
     
     parser.add_argument("--ckpt_path", type=str, default=None,
                         help="Ruta al archivo .ckpt del modelo entrenado")
+    
+    parser.add_argument("--brightness", action="store_true",
+                        help="Realiza experimentos con variantes de iluminación en AffectNet")
 
     args = parser.parse_args()
 
-    # if args.test_only and args.ckpt_path is None:
-    #     parser.error("Si usas --test_only necesitas especificar la ruta del checkpoint")
+    if args.test_only and args.ckpt_path is None:
+        parser.error("Si usas --test_only necesitas especificar la ruta del checkpoint")
 
     if args.dataset == "multipie":
         print("LANZANDO EXPERIMENTOS MULTIPIE")
@@ -229,11 +254,11 @@ if __name__ == "__main__":
                     test_only=args.test_only,
                     ckpt_path=current_ckpt
                 )
-    
+
     elif args.dataset == "affectnet":
         print("LANZANDO BASELINE AFFECTNET")
-        run_affectnet_baseline(test_only=args.test_only, ckpt_path=args.ckpt_path)
+        run_affectnet_baseline(test_only=args.test_only, ckpt_path=args.ckpt_path, brightness=args.brightness)
     
     elif args.dataset == "affwild2":
         print("LANZANDO EXPERIMENTO AFFWILD2")
-        run_affwild2_baseline(test_only=args.test_only, ckpt_path=args.ckpt_path)
+        run_affwild2_baseline(test_only=args.test_only, ckpt_path=args.ckpt_path, brightness=args.brightness)

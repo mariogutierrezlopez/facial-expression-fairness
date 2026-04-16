@@ -11,6 +11,8 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from ..dataset import AffectNetDataset
 
+import torchvision.transforms.functional as TF
+
 from typing import Optional
 
 class AffectNetDataModule(L.LightningDataModule):
@@ -20,6 +22,7 @@ class AffectNetDataModule(L.LightningDataModule):
                  csv_test_path: str,
                  batch_size: int,
                  num_workers: int,
+                 test_brightness_factor: float = 1.0 # Experimentos iluminación
     ):
         super().__init__()
         self.data_dir = data_dir
@@ -27,6 +30,7 @@ class AffectNetDataModule(L.LightningDataModule):
         self.csv_test_path = csv_test_path
         self.batch_size = batch_size
         self.num_workers = num_workers
+        self.test_brightness_factor = test_brightness_factor
 
     def setup(self, stage:Optional[str]=None) -> None:
 
@@ -75,8 +79,21 @@ class AffectNetDataModule(L.LightningDataModule):
         
         if stage == "test" or stage is None:
             # test_balanced_df = self._apply_strict_balance(test_df)
+
+            # Experimentos de iluminación, transforms nuevo
+
+            test_transforms = transforms.Compose([
+                transforms.Resize((224,224)),
+                transforms.Lambda(lambda img: TF.adjust_brightness(img, self.test_brightness_factor)),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406],
+                    std=[0.229, 0.224, 0.225]
+                )
+            ])
+
             self._print_contingency_table(test_df, stage_name="test")
-            self.test_ds = AffectNetDataset(self.data_dir, df=test_df, transform=transform, return_metadata=True)
+            self.test_ds = AffectNetDataset(self.data_dir, df=test_df, transform=test_transforms, return_metadata=True)
 
     def _apply_expression_balance_with_gender_prior(self, df:pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
