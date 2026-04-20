@@ -192,7 +192,9 @@ class AffWild2Dataset(VisionDataset):
                 # 'ethnicity': row['ethnicity'],
                 # 'gender': row['gender'],
                 # 'age': row['age'],
-                'illumination': row['illumination']
+                'illumination': row['illumination'],
+                'gender_male': row['gender_male'],
+                'gender_female': row['gender_female']
             }
 
             return {

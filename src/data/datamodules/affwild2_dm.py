@@ -44,6 +44,7 @@ class AffWild2DatModule(L.LightningDataModule):
         # Tratamiento de datos para el dataset de test. El procedimiento es el mismo que en train/val
         # pero sin stratify_col
         val_df = pd.read_csv(self.csv_val_path)
+        val_df = self._preprocess_metadata(val_df)
         mask = val_df['image_path'].apply(lambda x: os.path.exists(os.path.join(self.data_dir, x)))
         val_df = val_df[mask].reset_index(drop=True)
 
@@ -73,7 +74,7 @@ class AffWild2DatModule(L.LightningDataModule):
             self._print_contingency_table(val_df, stage_name="val")
     
             self.train_ds = AffWild2Dataset(self.data_dir, df=train_balanced_df, transform=transform, return_metadata=False)
-            self.val_ds = AffWild2Dataset(self.data_dir, df=val_df, transform=transform, return_metadata=False)
+            self.val_ds = AffWild2Dataset(self.data_dir, df=val_df, transform=transform, return_metadata=True)
         
         if stage == "test" or stage is None:
             # test_balanced_df = self._apply_strict_balance(test_df)
@@ -91,6 +92,19 @@ class AffWild2DatModule(L.LightningDataModule):
 
             self._print_contingency_table(test_df, stage_name="test")
             self.test_ds = AffWild2Dataset(self.data_dir, df=test_df, transform=test_transforms, return_metadata=True)
+
+    # Gender attribute to gender_male & gender_female
+    def _preprocess_metadata(self, df: pd.DataFrame) -> pd.DataFrame:
+        df = df.copy()
+        if 'gender' in df.columns:
+            clean_gender = df['gender'].astype(str).str.strip().str.lower()
+            df['gender_male'] = (clean_gender == 'male').astype(int)
+            df['gender_female'] = (clean_gender == 'female').astype(int)
+        else:
+            df['gender_male'] = -1
+            df['gender_female'] = -1
+            
+        return df
 
     def _apply_subject_and_expression_balance(self, df: pd.DataFrame, max_frames_per_subject:int=200) -> pd.DataFrame:
         """
