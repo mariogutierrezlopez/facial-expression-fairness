@@ -9,7 +9,9 @@ from torchvision import transforms
 from torch.utils.data import DataLoader
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from ..dataset import AffWild2Dataset # Corregir esto
+from ..dataset import AffWild2Dataset
+
+import torchvision.transforms.functional as TF
 
 from typing import Optional
 
@@ -20,6 +22,7 @@ class AffWild2DatModule(L.LightningDataModule):
                  csv_val_path: str,
                  batch_size: int,
                  num_workers: int,
+                 test_brightness_factor: float = 1.0 #Experimentos de iluminación
     ):
         super().__init__()
         self.data_dir = data_dir
@@ -27,6 +30,7 @@ class AffWild2DatModule(L.LightningDataModule):
         self.csv_val_path = csv_val_path
         self.batch_size = batch_size
         self.num_workers = num_workers
+        self.test_brightness_factor = test_brightness_factor
 
     def setup(self, stage:Optional[str]=None) -> None:
 
@@ -73,8 +77,20 @@ class AffWild2DatModule(L.LightningDataModule):
         
         if stage == "test" or stage is None:
             # test_balanced_df = self._apply_strict_balance(test_df)
+
+            test_transforms = transforms.Compose([
+                transforms.Resize((224,224)),
+                transforms.Lambda(lambda img: TF.adjust_brightness(img, self.test_brightness_factor)),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406],
+                    std=[0.229, 0.224, 0.225]
+                )
+            ])
+
+
             self._print_contingency_table(test_df, stage_name="test")
-            self.test_ds = AffWild2Dataset(self.data_dir, df=test_df, transform=transform, return_metadata=True)
+            self.test_ds = AffWild2Dataset(self.data_dir, df=test_df, transform=test_transforms, return_metadata=True)
 
     def _apply_subject_and_expression_balance(self, df: pd.DataFrame, max_frames_per_subject:int=200) -> pd.DataFrame:
         """

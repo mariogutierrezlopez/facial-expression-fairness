@@ -38,7 +38,9 @@ class MultiPIEDataModule(L.LightningDataModule):
     # Función obligatoria de DataModule, settea la distribución de datos
     def setup(self, stage) -> None:
         raw_df = pd.read_csv(self.csv_path)
-
+        raw_df['abs_path'] = raw_df['abs_path'].str.replace('Multi-Pie', 'MultiPie', regex=False)
+        print(raw_df['abs_path'].head())
+        
         temps_ds = MultiPIEDataset(self.data_dir, df=raw_df)
         full_df = temps_ds.df
         # Obtener sujetos únicos y género para estratificar por persona

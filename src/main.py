@@ -194,6 +194,20 @@ def run_affwild2_baseline(test_only=False, ckpt_path=None, brightness=False):
     elif not brightness:
         print(f"Iniciando test en AffWild2 sobre el modelo {ckpt_path}")
         trainer.test(model=model, datamodule=data, ckpt_path=ckpt_path)
+    else:
+        print("Iniciando experimentos en AffectNet con variaciones de iluminación")
+        for variant_name, factor in brightness_variants.items():
+            data = AffWild2DatModule(
+                data_dir=AFFWILD2_DATA_DIR, 
+                csv_train_path=AFFWILD2_CSV_TRAIN_PATH,
+                csv_val_path=AFFWILD2_CSV_TEST_PATH, 
+                batch_size=BATCH_SIZE,
+                num_workers=NUM_WORKERS,
+                test_brightness_factor=factor
+            )
+            model.dataset_name = f"AffWild2_{variant_name}"
+
+            trainer.test(model, datamodule=data, ckpt_path=ckpt_path)
 
     wandb.finish()
 
