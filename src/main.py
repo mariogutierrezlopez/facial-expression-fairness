@@ -5,6 +5,7 @@ import argparse
 import lightning as L
 import torch
 from src.models.resnet50 import ResNet50
+from src.models.emotieff import EmotiEff
 
 from src.data.datamodules.multipie_dm import MultiPIEDataModule
 from src.data.datamodules.affectnet_dm import AffectNetDataModule
@@ -17,8 +18,8 @@ from lightning.pytorch.callbacks import ModelCheckpoint
 import wandb
 
 # --- CONFIGURACIÓN MULTIPIE ---
-MPIE_DATA_DIR = "/home12TB1/database/recognition/faces/Multi-Pie/data/"
-MPIE_CSV_PATH = "/home12TB1/database/recognition/faces/Multi-Pie/demographic_labels.csv"
+MPIE_DATA_DIR = "/home12TB1/database/recognition/faces/MultiPie/data/"
+MPIE_CSV_PATH = "/home12TB1/database/recognition/faces/MultiPie/demographic_labels.csv"
 
 # --- CONFIGURACIÓN AFFECTNET ---
 AFFNET_DATA_DIR = "/home12TB1/database/recognition/faces/affectnet/"
@@ -41,6 +42,12 @@ N_OUTPUTS_AFFNET = 8
 N_OUTPUTS_AFFWILD2 = 8
 BIAS_FACTORS = [0.0, 0.25, 0.5, 0.75, 1.0]
 
+# --- CLASS WEIGHTS MULTIPIE ---
+dummy_class_weights = {0: 1.0, 1: 1.0, 2: 1.0, 3: 1.0, 4: 1.0, 5: 1.0}
+
+# --- MODEL ROUTE ---
+EFFICIENTNET_B0_VGAF_CHECKPOINT = "/home/mgutierrez/TFM/src/models/enet_b0_8_best_vgaf.pt"
+
 # EXPERIMENTO ALTERACIÓN BRIGHTNESS
 brightness_variants = {
     "normal": 1.0,
@@ -58,7 +65,7 @@ weights = [total / (n_classes * n) for n in num_samples]
 class_weights = torch.tensor(weights, dtype=torch.float32)
 
 
-def run_multipie_experiment(exp_name, bias_type, bias_factor, n_limit, target_class=None, test_only=False, ckpt_path=None):
+def run_multipie_experiment(exp_name, bias_type, bias_factor, n_limit, target_class=None, test_only=False, ckpt_path=None, sota_test=False):
 
     if wandb.run is not None:
         wandb.finish()
@@ -74,11 +81,21 @@ def run_multipie_experiment(exp_name, bias_type, bias_factor, n_limit, target_cl
         target_class=target_class
     )
 
-    model = ResNet50(n_outputs=N_OUTPUTS_MPIE, lr=LEARNING_RATE, dataset_name="MultiPIE")
+    if sota_test:
+        print("Entrenando MultiPIE con EmotiEff")
+        model = EmotiEff(
+            n_outputs=N_OUTPUTS_MPIE,
+            class_weights=dummy_class_weights,
+            lr=LEARNING_RATE,
+            freeze_backbone=False,
+            vggface2_weights_path=EFFICIENTNET_B0_VGAF_CHECKPOINT
+        )
+    else:
+        model = ResNet50(n_outputs=N_OUTPUTS_MPIE, lr=LEARNING_RATE, dataset_name="MultiPIE")
 
     logger = WandbLogger(
         name=exp_name,
-        project="MultiPIE_test",
+        project="MultiPIE_emotieff",
         log_model="all",
     )
 
@@ -89,11 +106,12 @@ def run_multipie_experiment(exp_name, bias_type, bias_factor, n_limit, target_cl
     trainer = L.Trainer(
         accelerator="gpu",
         # devices=[0],
-        precision="16-mixed",
+        precision="32-true",
         max_epochs=EPOCHS_MPIE,
         log_every_n_steps=10,
         logger=logger,
         callbacks=[checkpoint_callback],
+        limit_val_batches=0.0
     )
 
     if not test_only:
@@ -131,7 +149,7 @@ def run_affectnet_baseline(test_only=False, ckpt_path=None, brightness=False):
         verbose=True
     )
 
-    trainer = L.Trainer(accelerator="gpu", precision="16-mixed", max_epochs=MAX_EPOCHS,
+    trainer = L.Trainer(accelerator="gpu", precision="32-true", max_epochs=MAX_EPOCHS,
                         log_every_n_steps=10, logger=logger, callbacks=[checkpoint_callback])
     
     if not test_only:
@@ -184,7 +202,7 @@ def run_affwild2_baseline(test_only=False, ckpt_path=None, brightness=False):
         verbose=True
     )
 
-    trainer = L.Trainer(accelerator="gpu", precision="16-mixed", max_epochs=MAX_EPOCHS,
+    trainer = L.Trainer(accelerator="gpu", precision="32-true", max_epochs=MAX_EPOCHS,
                         log_every_n_steps=10, logger=logger, callbacks=[checkpoint_callback])
     
     if not test_only:
@@ -229,7 +247,10 @@ if __name__ == "__main__":
     
     parser.add_argument("--brightness", action="store_true",
                         help="Realiza experimentos con variantes de iluminación en AffectNet")
-
+    
+    parser.add_argument("--sota", action="store_true",
+                        help="Activa el Smoke Test del nuevo modelo EmotiEff en MultiPIE")
+    
     args = parser.parse_args()
 
     if args.test_only and args.ckpt_path is None:
@@ -250,7 +271,8 @@ if __name__ == "__main__":
                 target_class=None,
                 n_limit=n_limit_repres,
                 test_only=args.test_only,
-                ckpt_path=current_ckpt
+                ckpt_path=current_ckpt,
+                sota_test=args.sota
             )
         
         print("Fase 2: Sesgo estereotípico")
@@ -266,7 +288,8 @@ if __name__ == "__main__":
                     target_class=target_id,
                     n_limit=n_limit_stereo,
                     test_only=args.test_only,
-                    ckpt_path=current_ckpt
+                    ckpt_path=current_ckpt,
+                    sota_test=args.sota
                 )
 
     elif args.dataset == "affectnet":

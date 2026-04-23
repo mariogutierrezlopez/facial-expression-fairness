@@ -47,9 +47,12 @@ class MultiPIEDataset(VisionDataset):
         target = self.labels[index]
 
         img_path = str(row["abs_path"]).replace('data_cropped', 'data').replace('/multiview/', '/')
+        camera_id = row['camera_id']
 
         image = Image.open(img_path).convert("RGB")
 
+        if camera_id == '08_1':
+            image = image.transpose(Image.Transpose.ROTATE_180)
 
         demographics = {
             'gender': row['gender'],
