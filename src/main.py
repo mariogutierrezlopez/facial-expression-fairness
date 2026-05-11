@@ -11,7 +11,7 @@ from src.data.datamodules.multipie_dm import MultiPIEDataModule
 from src.data.datamodules.affectnet_dm import AffectNetDataModule
 from src.data.datamodules.affwild2_dm import AffWild2DatModule
 
-from src.utils.utils import calc_nlimits
+from src.utils.utils import calc_nlimits, calc_nlimit_pose
 
 from lightning.pytorch.loggers import WandbLogger
 from lightning.pytorch.callbacks import ModelCheckpoint
@@ -35,8 +35,8 @@ AFFWILD2_CSV_TEST_PATH = "/home12TB1/database/recognition/faces/affwild2/datafra
 LEARNING_RATE = 1e-4
 BATCH_SIZE = 128
 NUM_WORKERS = 12
-MAX_EPOCHS = 50
-EPOCHS_MPIE = 20
+MAX_EPOCHS = 100
+EPOCHS_MPIE = 100
 N_OUTPUTS_MPIE = 6
 N_OUTPUTS_AFFNET = 8
 N_OUTPUTS_AFFWILD2 = 8
@@ -65,7 +65,7 @@ weights = [total / (n_classes * n) for n in num_samples]
 class_weights = torch.tensor(weights, dtype=torch.float32)
 
 
-def run_multipie_experiment(exp_name, bias_type, bias_factor, n_limit, target_class=None, test_only=False, ckpt_path=None, sota_test=False):
+def run_multipie_experiment(exp_name, bias_type, bias_factor, n_limit, target_class=None, test_only=False, ckpt_path=None, sota_test=False, g_pose=0.5):
 
     if wandb.run is not None:
         wandb.finish()
@@ -78,7 +78,8 @@ def run_multipie_experiment(exp_name, bias_type, bias_factor, n_limit, target_cl
         bias_type=bias_type,
         bias_factor=bias_factor,
         n_limit=n_limit,
-        target_class=target_class
+        target_class=target_class,
+        g_pose=g_pose
     )
 
     if sota_test:
@@ -88,20 +89,27 @@ def run_multipie_experiment(exp_name, bias_type, bias_factor, n_limit, target_cl
             class_weights=dummy_class_weights,
             lr=LEARNING_RATE,
             freeze_backbone=False,
-            vggface2_weights_path=EFFICIENTNET_B0_VGAF_CHECKPOINT
+            vggface2_weights_path=None
         )
     else:
         model = ResNet50(n_outputs=N_OUTPUTS_MPIE, lr=LEARNING_RATE, dataset_name="MultiPIE")
 
     logger = WandbLogger(
         name=exp_name,
-        project="MultiPIE_emotieff",
+        project="MultiPIE_emotieff_zero",
         log_model="all",
     )
 
     print(f"Hiperparámetros del modelo{model.hparams}")
     
-    checkpoint_callback = ModelCheckpoint(save_last=True, save_top_k=0, dirpath=f"checkpoints/{exp_name}/")
+    checkpoint_callback = ModelCheckpoint(
+        monitor='val_loss',
+        dirpath=f"checkpoints/{exp_name}/",
+        filename='emotieff-{epoch:02d}-{val_loss:.3f}',
+        save_top_k=1,
+        mode='min',
+        save_last=True
+    )
 
     trainer = L.Trainer(
         accelerator="gpu",
@@ -111,7 +119,6 @@ def run_multipie_experiment(exp_name, bias_type, bias_factor, n_limit, target_cl
         log_every_n_steps=10,
         logger=logger,
         callbacks=[checkpoint_callback],
-        limit_val_batches=0.0
     )
 
     if not test_only:
@@ -119,7 +126,7 @@ def run_multipie_experiment(exp_name, bias_type, bias_factor, n_limit, target_cl
         trainer.test(model=model, datamodule=data, ckpt_path="last")
     else:
         print(f"Iniciando modo test sobre MultiPIE con el modelo {ckpt_path}")
-        trainer.test(model=model, datamodule=data, ckpt_path=ckpt_path)
+        trainer.test(model=model, datamodule=data, ckpt_path="best")
 
     wandb.finish()
 
@@ -251,46 +258,71 @@ if __name__ == "__main__":
     parser.add_argument("--sota", action="store_true",
                         help="Activa el Smoke Test del nuevo modelo EmotiEff en MultiPIE")
     
+    parser.add_argument("--pose", action="store_true",
+                        help="Activa el experimento de pose para MultiPIE")
+    
     args = parser.parse_args()
 
     if args.test_only and args.ckpt_path is None:
         parser.error("Si usas --test_only necesitas especificar la ruta del checkpoint")
 
     if args.dataset == "multipie":
+
         print("LANZANDO EXPERIMENTOS MULTIPIE")
         n_limit_repres, n_limit_stereo = calc_nlimits(MPIE_CSV_PATH, BIAS_FACTORS)
-        
-        print("Fase 1: Sesgo representacional")
-        for f in BIAS_FACTORS:
-            exp_name = f"Representational_bias_f{f}"
-            current_ckpt = f"checkpoints/{exp_name}/last.ckpt" if args.test_only else args.ckpt_path
-            run_multipie_experiment(
-                exp_name=f"Representational_bias_f{f}",
-                bias_type="representational",
-                bias_factor=f,
-                target_class=None,
-                n_limit=n_limit_repres,
-                test_only=args.test_only,
-                ckpt_path=current_ckpt,
-                sota_test=args.sota
-            )
-        
-        print("Fase 2: Sesgo estereotípico")
-        TARGET_CLASS_IDS = [0,1,2,3,4,5]
-        for target_id in TARGET_CLASS_IDS:
-            for f in BIAS_FACTORS:
-                exp_name = f"Stereotipical_bias_c{target_id}_f{f}"
+        if args.pose:
+            n_limit_pose = calc_nlimit_pose(MPIE_CSV_PATH, BIAS_FACTORS)
+            print("MultiPIE: Sesgo de pose")
+            for g in BIAS_FACTORS:
+                exp_name = f"Pose_bias_g{g}"
                 current_ckpt = f"checkpoints/{exp_name}/last.ckpt" if args.test_only else args.ckpt_path
+                
                 run_multipie_experiment(
-                    exp_name=f"Stereotipical_bias_c{target_id}_f{f}",
-                    bias_type="stereotipical",
-                    bias_factor=f,
-                    target_class=target_id,
-                    n_limit=n_limit_stereo,
+                    exp_name=exp_name,
+                    bias_type="pose",
+                    bias_factor=0.5, # Género neutro
+                    target_class=None,
+                    n_limit=n_limit_pose,
                     test_only=args.test_only,
                     ckpt_path=current_ckpt,
-                    sota_test=args.sota
+                    sota_test=args.sota,
+                    g_pose=g
                 )
+        else:
+            print("MultiPIE: Sesgo representacional")
+            for f in BIAS_FACTORS:
+                exp_name = f"Representational_bias_f{f}"
+                current_ckpt = f"checkpoints/{exp_name}/last.ckpt" if args.test_only else args.ckpt_path
+                
+                run_multipie_experiment(
+                    exp_name=f"Representational_bias_f{f}",
+                    bias_type="representational",
+                    bias_factor=f,
+                    target_class=None,
+                    n_limit=n_limit_repres,
+                    test_only=args.test_only,
+                    ckpt_path=current_ckpt,
+                    sota_test=args.sota,
+                    g_pose=0.5
+                )
+                
+            print("MultiPIE: Sesgo estereotípico")
+            TARGET_CLASS_IDS = [0,1,2,3,4,5]
+            for target_id in TARGET_CLASS_IDS:
+                for f in BIAS_FACTORS:
+                    exp_name = f"Stereotipical_bias_c{target_id}_f{f}"
+                    current_ckpt = f"checkpoints/{exp_name}/last.ckpt" if args.test_only else args.ckpt_path
+                    run_multipie_experiment(
+                        exp_name=f"Stereotipical_bias_c{target_id}_f{f}",
+                        bias_type="stereotipical",
+                        bias_factor=f,
+                        target_class=target_id,
+                        n_limit=n_limit_stereo,
+                        test_only=args.test_only,
+                        ckpt_path=current_ckpt,
+                        sota_test=args.sota,
+                        g_pose=0.5
+                    )
 
     elif args.dataset == "affectnet":
         print("LANZANDO BASELINE AFFECTNET")

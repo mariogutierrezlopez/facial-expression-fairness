@@ -4,6 +4,72 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
+POSE_BINS = {
+    "frontal": ["14_0", "05_1", "05_0"],
+    "profile": ["12_0", "20_0", "01_0"],
+}
+
+def calc_nlimit_pose(csv_path, bias_arr: list):
+    """
+    Calcula el N_limit global para el experimento de sesgo de pose.
+    Garantiza que haya suficientes imágenes para todas las clases y
+    todos los factores 'g' en los 4 cruces de Género x Pose.
+    """
+    df = pd.read_csv(csv_path)
+    df = generate_labels(df)
+
+    def map_pose(cam):
+        cam_str = str(cam)
+        if cam_str in POSE_BINS["frontal"]: return "frontal"
+        if cam_str in POSE_BINS["profile"]: return "profile"
+        return "other"
+        
+    df['pose'] = df['camera_id'].apply(map_pose)
+    df = df[df['pose'] != "other"]
+
+    subjects_df = df[['subject_id', 'gender']].drop_duplicates()
+    train_subs, _ = train_test_split(
+        subjects_df,
+        test_size=0.3,
+        stratify=subjects_df['gender'],
+        random_state=42
+    )
+    df = df[df['subject_id'].isin(train_subs['subject_id'])]
+    
+    classes = [c for c in df['temp_label'].unique() if c != -1]
+
+    min_pose_limit = float('inf')
+
+    for g in bias_arr:
+        for label in classes:
+            # Disponibilidad real en el dataset para esta clase
+            avail_wf = len(df[(df['temp_label'] == label) & (df['gender'] == 'Female') & (df['pose'] == 'frontal')])
+            avail_wp = len(df[(df['temp_label'] == label) & (df['gender'] == 'Female') & (df['pose'] == 'profile')])
+            avail_mf = len(df[(df['temp_label'] == label) & (df['gender'] == 'Male') & (df['pose'] == 'frontal')])
+            avail_mp = len(df[(df['temp_label'] == label) & (df['gender'] == 'Male') & (df['pose'] == 'profile')])
+
+            f_gender = 0.5
+            
+            limits = []
+            
+            # Límites basados en frontales vs perfiles según 'g'
+            if g > 0:
+                limits.append(avail_wf / (f_gender * g))         # Mujeres frente
+                limits.append(avail_mp / (f_gender * g))         # Hombres perfil
+            
+            if g < 1:
+                limits.append(avail_wp / (f_gender * (1 - g)))   # Mujeres perfil
+                limits.append(avail_mf / (f_gender * (1 - g)))   # Hombres frente
+                
+            # El límite máximo que soporta este escenario es el mínimo de los 4 grupos
+            current_limit = int(min(limits))
+            
+            # Actualizamos el límite global si este es más restrictivo
+            if current_limit < min_pose_limit:
+                min_pose_limit = current_limit
+
+    return int(min_pose_limit)
+
 def calc_nlimits(csv_path, bias_arr:list):
     """
     Calcula 2 N_limit separados para maximizar los datos

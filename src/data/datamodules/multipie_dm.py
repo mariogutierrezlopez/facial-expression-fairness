@@ -12,6 +12,11 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from ..dataset import MultiPIEDataset
 
+POSE_BINS = {
+    "frontal": ["14_0", "05_1", "05_0"],
+    "profile": ["12_0", "20_0", "01_0"],
+}
+
 class MultiPIEDataModule(L.LightningDataModule):
     def __init__(self,
                  data_dir: str,
@@ -22,6 +27,7 @@ class MultiPIEDataModule(L.LightningDataModule):
                  bias_factor: float = 0.5,
                  n_limit:int = 0,
                  target_class: int | None = None,
+                 g_pose: float = 0.5,
     ):
         super().__init__()
         self.data_dir = data_dir
@@ -33,6 +39,8 @@ class MultiPIEDataModule(L.LightningDataModule):
         self.bias_factor = bias_factor
         self.target_class = target_class
 
+        self.g_pose = g_pose
+
         self.n_limit = n_limit
 
     # Función obligatoria de DataModule, settea la distribución de datos
@@ -42,7 +50,12 @@ class MultiPIEDataModule(L.LightningDataModule):
         print(raw_df['abs_path'].head())
         
         temps_ds = MultiPIEDataset(self.data_dir, df=raw_df)
-        full_df = temps_ds.df
+        
+        if self.bias_type == "pose":
+            full_df = self._add_pose_column(temps_ds.df)
+        else:
+            full_df = temps_ds.df.copy()
+
         # Obtener sujetos únicos y género para estratificar por persona
         subjects_df = full_df[['subject_id', 'gender']].drop_duplicates()
 
@@ -97,32 +110,48 @@ class MultiPIEDataModule(L.LightningDataModule):
     def _apply_experiment_bias(self, df: pd.DataFrame) -> pd.DataFrame:
         final_dfs = []
         classes = df['temp_label'].unique()
-
-
         global_limit_N = self.n_limit
 
         for label in classes:
-            # Lógica para determinar el f de esta clase específica
-            if self.bias_type == "stereotipical":
-                current_f = self.bias_factor if label == self.target_class else 0.5
+            # Lógica para determinar el f (genero) y g (pose) segun el tipo de experimento
+            if self.bias_type == "pose":
+
+                n_req_women = int(global_limit_N * 0.5)
+                n_req_men = global_limit_N - n_req_women
+
+                n_women_frontal = int(n_req_women * self.g_pose)
+                n_women_profile = n_req_women - n_women_frontal
+                
+                n_men_profile = int(n_req_men * self.g_pose)
+                n_men_frontal = n_req_men - n_men_profile
+
+                w_frontal = df[(df['temp_label'] == label) & (df['gender'] == "Female") & (df['pose'] == "frontal")]
+                w_profile = df[(df['temp_label'] == label) & (df['gender'] == "Female") & (df['pose'] == "profile")]
+                m_frontal = df[(df['temp_label'] == label) & (df['gender'] == "Male") & (df['pose'] == "frontal")]
+                m_profile = df[(df['temp_label'] == label) & (df['gender'] == "Male") & (df['pose'] == "profile")]
+
+                sampled_w_f = w_frontal.sample(n=min(n_women_frontal, len(w_frontal)), random_state=42)
+                sampled_w_p = w_profile.sample(n=min(n_women_profile, len(w_profile)), random_state=42)
+                sampled_m_f = m_frontal.sample(n=min(n_men_frontal, len(m_frontal)), random_state=42)
+                sampled_m_p = m_profile.sample(n=min(n_men_profile, len(m_profile)), random_state=42)
+                
+                final_dfs.extend([sampled_w_f, sampled_w_p, sampled_m_f, sampled_m_p])
             else:
-                current_f = self.bias_factor
-            
-            # Cálculo de muestras por género basado en el N fijo
-            n_req_women = int(global_limit_N * current_f)
-            n_req_men = global_limit_N - n_req_women
+                if self.bias_type == "stereotipical":
+                    current_f = self.bias_factor if label == self.target_class else 0.5
+                else:
+                    current_f = self.bias_factor
+                
+                n_req_women = int(global_limit_N * current_f)
+                n_req_men = global_limit_N - n_req_women
 
-            available_women = df[(df['temp_label'] == label) & (df['gender'] == "Female")]
-            available_men = df[(df['temp_label'] == label) & (df['gender'] == "Male")]
+                available_women = df[(df['temp_label'] == label) & (df['gender'] == "Female")]
+                available_men = df[(df['temp_label'] == label) & (df['gender'] == "Male")]
 
-            n_women_to_sample = min(n_req_women, len(available_women))
-            n_men_to_sample = min(n_req_men, len(available_men))
-
-            # Muestreo aleatorio
-            sampled_women = available_women.sample(n=n_women_to_sample, random_state=42)
-            sampled_men = available_men.sample(n=n_men_to_sample, random_state=42)
-            
-            final_dfs.extend([sampled_women, sampled_men])
+                sampled_women = available_women.sample(n=min(n_req_women, len(available_women)), random_state=42)
+                sampled_men = available_men.sample(n=min(n_req_men, len(available_men)), random_state=42)
+                
+                final_dfs.extend([sampled_women, sampled_men])
 
         return pd.concat(final_dfs).sample(frac=1, random_state=42).reset_index(drop=True)
     
@@ -134,25 +163,53 @@ class MultiPIEDataModule(L.LightningDataModule):
         """
         final_dfs = []
         classes = df['temp_label'].unique()
-
         global_min_limit = 99999999
-        for label in classes:
-            n_women = len(df[(df['temp_label'] == label) & (df['gender'] == 'Female')])
-            n_men = len(df[(df['temp_label'] == label) & (df['gender'] == 'Male')])
-            local_limit = min(n_women, n_men)
-            if local_limit < global_min_limit:
-                global_min_limit = local_limit
 
-        # 2. Aplicar ese límite estricto a TODAS las clases
-        if global_min_limit > 0:
+
+        if self.bias_type == "pose":
             for label in classes:
-                available_women = df[(df['temp_label'] == label) & (df['gender'] == 'Female')]
-                available_men = df[(df['temp_label'] == label) & (df['gender'] == 'Male')]
+                n_wf = len(df[(df['temp_label'] == label) & (df['gender'] == 'Female') & (df['pose'] == 'frontal')])
+                n_wp = len(df[(df['temp_label'] == label) & (df['gender'] == 'Female') & (df['pose'] == 'profile')])
+                n_mf = len(df[(df['temp_label'] == label) & (df['gender'] == 'Male') & (df['pose'] == 'frontal')])
+                n_mp = len(df[(df['temp_label'] == label) & (df['gender'] == 'Male') & (df['pose'] == 'profile')])
+                
+                local_limit = min(n_wf, n_wp, n_mf, n_mp)
+                if local_limit < global_min_limit:
+                    global_min_limit = local_limit
 
-                sampled_women = available_women.sample(n=global_min_limit, random_state=42)
-                sampled_men = available_men.sample(n=global_min_limit, random_state=42)
-                final_dfs.extend([sampled_women, sampled_men])
+            if global_min_limit > 0:
+                for label in classes:
+                    w_frontal = df[(df['temp_label'] == label) & (df['gender'] == 'Female') & (df['pose'] == 'frontal')]
+                    w_profile = df[(df['temp_label'] == label) & (df['gender'] == 'Female') & (df['pose'] == 'profile')]
+                    m_frontal = df[(df['temp_label'] == label) & (df['gender'] == 'Male') & (df['pose'] == 'frontal')]
+                    m_profile = df[(df['temp_label'] == label) & (df['gender'] == 'Male') & (df['pose'] == 'profile')]
 
+                    sampled_wf = w_frontal.sample(n=global_min_limit, random_state=42)
+                    sampled_wp = w_profile.sample(n=global_min_limit, random_state=42)
+                    sampled_mf = m_frontal.sample(n=global_min_limit, random_state=42)
+                    sampled_mp = m_profile.sample(n=global_min_limit, random_state=42)
+                    
+                    final_dfs.extend([sampled_wf, sampled_wp, sampled_mf, sampled_mp])
+
+        else:
+            for label in classes:
+                n_women = len(df[(df['temp_label'] == label) & (df['gender'] == 'Female')])
+                n_men = len(df[(df['temp_label'] == label) & (df['gender'] == 'Male')])
+                
+                local_limit = min(n_women, n_men)
+                if local_limit < global_min_limit:
+                    global_min_limit = local_limit
+
+            if global_min_limit > 0:
+                for label in classes:
+                    available_women = df[(df['temp_label'] == label) & (df['gender'] == 'Female')]
+                    available_men = df[(df['temp_label'] == label) & (df['gender'] == 'Male')]
+
+                    sampled_women = available_women.sample(n=global_min_limit, random_state=42)
+                    sampled_men = available_men.sample(n=global_min_limit, random_state=42)
+                    
+                    final_dfs.extend([sampled_women, sampled_men])
+                    
         return pd.concat(final_dfs).sample(frac=1, random_state=42).reset_index(drop=True)
 
     # ESTA FUNCION DE MOMENTO NO SE USA
@@ -215,10 +272,28 @@ class MultiPIEDataModule(L.LightningDataModule):
         
         return pd.concat(final_dfs).sample(frac=1, random_state=42).reset_index(drop=True)
     
+    def _add_pose_column(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Asigna la clase 'frontal' o 'profile' segun la camara y filtra el resto """
+        df = df.copy()
+
+        def map_pose(cam):
+            cam_str = str(cam)
+            if cam_str in POSE_BINS["frontal"]: return "frontal"
+            if cam_str in POSE_BINS["profile"]: return "profile"
+            return "other"
+
+        df['pose'] = df['camera_id'].apply(map_pose)
+
+        return df[df['pose'] != "other"] 
+
     # Print para ver los parámetros del experimento y la tabla con los géneros y labels
     def _print_contingency_table(self, df, stage_name="train") -> None:
-        print(f"Contingency table: {self.bias_type}, f={self.bias_factor}")
-        ct = pd.crosstab(df['temp_label'], df['gender'])
+        print(f"\n--- Contingency table: {self.bias_type}, f={self.bias_factor}, g={self.g_pose} ---")
+        if 'pose' in df.columns:
+            ct = pd.crosstab(df['temp_label'], [df['gender'], df['pose']])
+        else:
+            ct = pd.crosstab(df['temp_label'], df['gender'])
+            
         print(ct)
 
         # Guardar tabla en un csv
@@ -226,9 +301,7 @@ class MultiPIEDataModule(L.LightningDataModule):
         log_dir = f"dataset_logs_fase2-c{t_class}"
         os.makedirs(log_dir, exist_ok=True)
         
-
-        filename = f"{log_dir}/{stage_name}_dist_{self.bias_type}_f{self.bias_factor}.csv"
-
+        filename = f"{log_dir}/{stage_name}_dist_{self.bias_type}_f{self.bias_factor}_g{self.g_pose}.csv"
         ct.to_csv(filename)
 
     # Funciones del DataModule

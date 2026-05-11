@@ -16,8 +16,10 @@ from torchmetrics import ConfusionMatrix
 import wandb
 
 
+from torch.autograd import Function
+
 class EmotiEff(LightningModule):
-    def __init__(self, n_outputs: int, lr: float, class_weights, model_name='tf_efficientnet_b0_ns', vggface2_weights_path=None, freeze_backbone=False, dataset_name="MultiPIE") -> None:
+    def __init__(self, n_outputs: int, lr: float, class_weights, model_name='tf_efficientnet_b0_ns', vggface2_weights_path=None, freeze_backbone=False, dataset_name="MultiPIE", lambda_grl=1.0) -> None:
         super().__init__()
 
         self.n_outputs = n_outputs
@@ -27,6 +29,7 @@ class EmotiEff(LightningModule):
         self.dataset_name = dataset_name # Nombre para guardar embeddings
 
         self.save_hyperparameters(ignore=['class_weights'])
+        # self.lambda_grl = lambda_grl
 
         # Modelo
         self.model = timm.create_model(model_name, pretrained=False)
@@ -39,10 +42,20 @@ class EmotiEff(LightningModule):
                 pesos = pesos.state_dict()
 
             self.model.load_state_dict(pesos, strict=False)
+        else:
+            print("NO se han seleccionado pesos, realizando entrenamiento desde cero")
             
         # Adaptar el clasificador a emociones
         in_features = self.model.classifier.in_features
         self.model.classifier = nn.Linear(in_features, self.n_outputs)
+
+
+        # self.gender_classifier = nn.Sequential(
+        #     nn.Linear(in_features, 128),
+        #     nn.ReLU(),
+        #     nn.Linear(128, 2) 
+        # )
+
 
         # Congelar/Descongelar backbone
         if freeze_backbone:
@@ -62,33 +75,63 @@ class EmotiEff(LightningModule):
         self.test_step_outputs = []
     
     def forward(self, x, return_embeddings=False):
+        features = self.model.forward_features(x)
+        embeddings = self.model.global_pool(features)
+        
+        emotion_logits = self.model.classifier(embeddings)
+
+        # reversed_embeddings = GradientReversalLayer.apply(embeddings, self.lambda_grl)
+        # gender_logits = self.gender_classifier(reversed_embeddings)
+        # if return_embeddings:
+        #     return emotion_logits, gender_logits, embeddings
+        # else:
+        #     return emotion_logits, gender_logits
+        
         if return_embeddings:
-            features = self.model.forward_features(x)
-            embeddings = self.model.global_pool(features)
-            logits = self.model.classifier(embeddings)
-            return logits, embeddings
+            return emotion_logits, embeddings
         else:
-            return self.model(x)
+            return emotion_logits
+    
     
     def training_step(self, batch, batch_idx):
         x, y = batch["image"], batch["target"]
-        logits = self(x)
-        loss = self.loss(logits, y)
+        meta = batch.get("meta", {})
+        gender_female = meta.get("gender_female", torch.zeros_like(y))
+        gender_target = gender_female.long()
 
-        preds = torch.argmax(logits, dim=1)
+        # emotion_logits, gender_logits = self(x)
+        emotion_logits = self(x)
+
+        loss_emotion = self.loss(emotion_logits, y)
+        # loss_gender = F.cross_entropy(gender_logits, gender_target)
+
+        # total_loss = loss_emotion + loss_gender
+
+        preds = torch.argmax(emotion_logits, dim=1)
         acc = (preds == y).float().mean()
 
-        self.log('train_loss', loss, on_step=False, on_epoch=True, prog_bar=True)
+        self.log('train_loss_emotion', loss_emotion, on_step=False, on_epoch=True, prog_bar=True)
+        # self.log('train_loss_gender', loss_gender, on_step=False, on_epoch=True, prog_bar=True)
+        # self.log('train_loss_total', total_loss, on_step=False, on_epoch=True, prog_bar=True)
         self.log('train_acc', acc, on_step=False, on_epoch=True, prog_bar=True)
 
-        return loss
+        return loss_emotion
     
     def validation_step(self, batch, batch_idx):
         x, y = batch["image"], batch["target"]
-        logits = self(x)
-        loss = self.loss(logits, y)
 
-        preds = torch.argmax(logits, dim=1)
+        # emotion_logits, gender_logits = self(x)
+
+        # loss = self.loss(emotion_logits, y)
+        
+        # preds = torch.argmax(emotion_logits, dim=1)
+        # acc = (preds == y).float().mean()
+
+        emotion_logits = self(x)
+
+        loss = self.loss(emotion_logits, y)
+        
+        preds = torch.argmax(emotion_logits, dim=1)
         acc = (preds == y).float().mean()
 
         self.log('val_loss', loss, on_step=False, on_epoch=True, prog_bar=True)
@@ -97,7 +140,7 @@ class EmotiEff(LightningModule):
         return loss
 
     def configure_optimizers(self):
-        optimizer = RobustOptimizer(filter(lambda p: p.requires_grad, self.model.parameters()), optim.Adam, lr=self.lr)
+        optimizer = RobustOptimizer(filter(lambda p: p.requires_grad, self.parameters()), optim.Adam, lr=self.lr)
         
         scheduler = torch.optim.lr_scheduler.OneCycleLR(
             optimizer, 
@@ -136,16 +179,16 @@ class EmotiEff(LightningModule):
         gender_female = meta.get("gender_female", torch.ones_like(y) * -1)
         illumination = meta.get("illumination", (torch.ones_like(y).float() * -1))
 
-        # Llamamos al forward pidiendo los embeddings
-        logits, embeddings = self(x, return_embeddings=True)
-        loss = self.loss(logits, y)
+        # emotion_logits, gender_logits, embeddings = self(x, return_embeddings=True)
+        emotion_logits, embeddings = self(x, return_embeddings=True)
+        loss = self.loss(emotion_logits, y)
 
-        self.test_acc(logits, y)
-        self.test_recall_per_class(logits, y)
-        self.test_avg_recall(logits, y)
-        self.conf_matrix(logits, y)
+        self.test_acc(emotion_logits, y)
+        self.test_recall_per_class(emotion_logits, y)
+        self.test_avg_recall(emotion_logits, y)
+        self.conf_matrix(emotion_logits, y)
 
-        preds = torch.argmax(logits, dim=1)
+        preds = torch.argmax(emotion_logits, dim=1)
 
         self.test_step_outputs.append({
             "preds": preds.detach().cpu(),
@@ -227,3 +270,14 @@ class EmotiEff(LightningModule):
         self.conf_matrix.reset()
         self.test_avg_recall.reset()
         self.test_recall_per_class.reset()
+
+# class GradientReversalLayer(Function):
+#     @staticmethod
+#     def forward(ctx, x, lambda_grl):
+#         ctx.lambda_grl = lambda_grl
+#         return x.view_as(x)
+    
+#     @staticmethod
+#     def backward(ctx, grad_outputs):
+#         output = grad_outputs.neg() * ctx.lambda_grl
+#         return output, None
