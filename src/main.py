@@ -96,7 +96,7 @@ def run_multipie_experiment(exp_name, bias_type, bias_factor, n_limit, target_cl
 
     logger = WandbLogger(
         name=exp_name,
-        project="MultiPIE_emotieff_zero",
+        project="MultiPIE_emotieff_zero_test_gender",
         log_model="all",
     )
 
@@ -126,7 +126,7 @@ def run_multipie_experiment(exp_name, bias_type, bias_factor, n_limit, target_cl
         trainer.test(model=model, datamodule=data, ckpt_path="last")
     else:
         print(f"Iniciando modo test sobre MultiPIE con el modelo {ckpt_path}")
-        trainer.test(model=model, datamodule=data, ckpt_path="best")
+        trainer.test(model=model, datamodule=data, ckpt_path=ckpt_path)
 
     wandb.finish()
 
@@ -275,8 +275,13 @@ if __name__ == "__main__":
             print("MultiPIE: Sesgo de pose")
             for g in BIAS_FACTORS:
                 exp_name = f"Pose_bias_g{g}"
-                current_ckpt = f"checkpoints/{exp_name}/last.ckpt" if args.test_only else args.ckpt_path
+                # current_ckpt = f"checkpoints/{exp_name}/last.ckpt" if args.test_only else args.ckpt_path
                 
+                if args.test_only and args.ckpt_path is not None:
+                    current_ckpt = args.ckpt_path
+                else:
+                    current_ckpt = f"checkpoints/{exp_name}/last.ckpt"
+
                 run_multipie_experiment(
                     exp_name=exp_name,
                     bias_type="pose",
@@ -284,7 +289,7 @@ if __name__ == "__main__":
                     target_class=None,
                     n_limit=n_limit_pose,
                     test_only=args.test_only,
-                    ckpt_path=current_ckpt,
+                    ckpt_path=args.ckpt_path,
                     sota_test=args.sota,
                     g_pose=g
                 )

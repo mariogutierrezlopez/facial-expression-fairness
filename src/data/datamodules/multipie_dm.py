@@ -51,10 +51,11 @@ class MultiPIEDataModule(L.LightningDataModule):
         
         temps_ds = MultiPIEDataset(self.data_dir, df=raw_df)
         
-        if self.bias_type == "pose":
-            full_df = self._add_pose_column(temps_ds.df)
-        else:
-            full_df = temps_ds.df.copy()
+        # if self.bias_type == "pose":
+        #     full_df = self._add_pose_column(temps_ds.df)
+        # else:
+        #     full_df = temps_ds.df.copy()
+        full_df = temps_ds.df.copy()
 
         # Obtener sujetos únicos y género para estratificar por persona
         subjects_df = full_df[['subject_id', 'gender']].drop_duplicates()
@@ -89,12 +90,19 @@ class MultiPIEDataModule(L.LightningDataModule):
         if stage == "fit":
 
             raw_train_df = full_df[full_df['subject_id'].isin(train_subs['subject_id'])]
+            raw_val_df = full_df[full_df['subject_id'].isin(val_subs['subject_id'])]
+
+
+            if self.bias_type == "pose":
+                raw_train_df = self._add_pose_column(raw_train_df)
+                raw_val_df = self._add_pose_column(raw_val_df)
+
+
             train_df = self._apply_experiment_bias(raw_train_df)
+            val_df = self._apply_experiment_bias(raw_val_df)
 
             self._print_contingency_table(train_df, stage_name="train")
-
-            raw_val_df = full_df[full_df['subject_id'].isin(val_subs['subject_id'])]
-            val_df = self._apply_balanced_evaluation(raw_val_df)
+            # self._print_contingency_table(val_df, stage_name="val")
     
             self.train_ds = MultiPIEDataset(self.data_dir, df=train_df, transform=transform, return_metadata=True)
             self.val_ds = MultiPIEDataset(self.data_dir, df=val_df, transform=transform, return_metadata=True)
@@ -102,7 +110,15 @@ class MultiPIEDataModule(L.LightningDataModule):
         if stage == "test":
 
             raw_test_df = full_df[full_df['subject_id'].isin(test_subs['subject_id'])]
+            
+            #Cambio del tipo de sesgo para testear con un conjunto balanceado en género con todas las cámaras
+            original_bias = self.bias_type
+            if self.bias_type == "pose":
+                self.bias_type = "representational"
+
             test_df = self._apply_balanced_evaluation(raw_test_df)
+            self.bias_type = original_bias
+
             self._print_contingency_table(test_df, stage_name="test")
             self.test_ds = MultiPIEDataset(self.data_dir, df=test_df, transform=transform, return_metadata=True)
 

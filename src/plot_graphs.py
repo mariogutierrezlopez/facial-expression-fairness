@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import re
 
 # --- CONFIGURATION ---
-WANDB_PATH = "mariogutierrezlopez-upm/MultiPIE_Stereotypical_All_Classes_correct" 
+WANDB_PATH = "mariogutierrezlopez-upm/MultiPIE_emotieff_zero" 
 EMOTIONS = {0: "Neutral", 1: "Smile", 2: "Surprise", 3: "Squint", 4: "Disgust", 5: "Scream"}
 PALETTE = {"Male": "#1D3557", "Female": "#E63946"}
 BASE_OUTPUT_DIR = "plots_output" # All folders will be created inside this main directory
