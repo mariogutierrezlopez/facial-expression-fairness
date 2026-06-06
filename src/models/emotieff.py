@@ -26,6 +26,8 @@ class EmotiEff(LightningModule):
         self.lr = lr
         self.class_weights = class_weights
 
+        self.automatic_optimization = False # Utilizar SAM
+
         self.dataset_name = dataset_name # Nombre para guardar embeddings
 
         self.save_hyperparameters(ignore=['class_weights'])
@@ -42,12 +44,17 @@ class EmotiEff(LightningModule):
                 pesos = pesos.state_dict()
 
             self.model.load_state_dict(pesos, strict=False)
+            print(f"Se han encontrado pesos en {vggface2_weights_path}")
         else:
             print("NO se han seleccionado pesos, realizando entrenamiento desde cero")
             
         # Adaptar el clasificador a emociones
         in_features = self.model.classifier.in_features
-        self.model.classifier = nn.Linear(in_features, self.n_outputs)
+        # self.model.classifier = nn.Linear(in_features, self.n_outputs)
+        self.model.classifier = nn.Sequential(
+            nn.Dropout(p=0.5), # Obliga a la red a 
+            nn.Linear(in_features, self.n_outputs)
+        )
 
 
         # self.gender_classifier = nn.Sequential(
@@ -92,30 +99,32 @@ class EmotiEff(LightningModule):
         else:
             return emotion_logits
     
-    
     def training_step(self, batch, batch_idx):
+        opt = self.optimizers()
+        sch = self.lr_schedulers()
+
         x, y = batch["image"], batch["target"]
-        meta = batch.get("meta", {})
-        gender_female = meta.get("gender_female", torch.zeros_like(y))
-        gender_target = gender_female.long()
 
-        # emotion_logits, gender_logits = self(x)
-        emotion_logits = self(x)
+        def closure():
+            opt.zero_grad()
+            emotion_logits = self(x)
+            loss_emotion = self.loss(emotion_logits, y)
+            self.manual_backward(loss_emotion)
+            return loss_emotion
 
-        loss_emotion = self.loss(emotion_logits, y)
-        # loss_gender = F.cross_entropy(gender_logits, gender_target)
+        loss_emotion = opt.step(closure=closure)
 
-        # total_loss = loss_emotion + loss_gender
+        sch.step()
 
-        preds = torch.argmax(emotion_logits, dim=1)
-        acc = (preds == y).float().mean()
+        with torch.no_grad():
+            logits_log = self(x)
+            preds = torch.argmax(logits_log, dim=1)
+            acc = (preds == y).float().mean()
 
         self.log('train_loss_emotion', loss_emotion, on_step=False, on_epoch=True, prog_bar=True)
-        # self.log('train_loss_gender', loss_gender, on_step=False, on_epoch=True, prog_bar=True)
-        # self.log('train_loss_total', total_loss, on_step=False, on_epoch=True, prog_bar=True)
         self.log('train_acc', acc, on_step=False, on_epoch=True, prog_bar=True)
 
-        return loss_emotion
+        return None
     
     def validation_step(self, batch, batch_idx):
         x, y = batch["image"], batch["target"]
@@ -140,7 +149,12 @@ class EmotiEff(LightningModule):
         return loss
 
     def configure_optimizers(self):
-        optimizer = RobustOptimizer(filter(lambda p: p.requires_grad, self.parameters()), optim.Adam, lr=self.lr)
+        optimizer = RobustOptimizer(
+            filter(lambda p: p.requires_grad, self.parameters()), 
+            optim.AdamW, 
+            lr=self.lr,
+            weight_decay=1e-2 # Castigo necesario para no memorizar
+        )
         
         scheduler = torch.optim.lr_scheduler.OneCycleLR(
             optimizer, 
@@ -149,10 +163,8 @@ class EmotiEff(LightningModule):
             cycle_momentum=False # <- Fix de compatibilidad con SAM
         )
         
-        return {
-            "optimizer": optimizer,
-            "lr_scheduler": {"scheduler": scheduler, "interval": "step"}
-        }
+        # Formato de retorno requerido para optimización manual
+        return [optimizer], [{"scheduler": scheduler, "interval": "step"}]
 
     def loss(self, pred, target):
         weights = torch.FloatTensor(list(self.class_weights.values())).to(pred.device)

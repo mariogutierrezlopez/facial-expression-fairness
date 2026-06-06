@@ -14,7 +14,7 @@ from ..dataset import MultiPIEDataset
 
 POSE_BINS = {
     "frontal": ["14_0", "05_1", "05_0"],
-    "profile": ["12_0", "20_0", "01_0"],
+    "profile": ["12_0", "09_0", "11_0"],
 }
 
 class MultiPIEDataModule(L.LightningDataModule):
@@ -27,7 +27,7 @@ class MultiPIEDataModule(L.LightningDataModule):
                  bias_factor: float = 0.5,
                  n_limit:int = 0,
                  target_class: int | None = None,
-                 g_pose: float = 0.5,
+                 pose_scenario: str = "H_Frontal_M_Profile"
     ):
         super().__init__()
         self.data_dir = data_dir
@@ -39,44 +39,12 @@ class MultiPIEDataModule(L.LightningDataModule):
         self.bias_factor = bias_factor
         self.target_class = target_class
 
-        self.g_pose = g_pose
-
-        self.n_limit = n_limit
+        self.pose_scenario = pose_scenario
 
     # Función obligatoria de DataModule, settea la distribución de datos
     def setup(self, stage) -> None:
-        raw_df = pd.read_csv(self.csv_path)
-        raw_df['abs_path'] = raw_df['abs_path'].str.replace('Multi-Pie', 'MultiPie', regex=False)
-        print(raw_df['abs_path'].head())
-        
-        temps_ds = MultiPIEDataset(self.data_dir, df=raw_df)
-        
-        # if self.bias_type == "pose":
-        #     full_df = self._add_pose_column(temps_ds.df)
-        # else:
-        #     full_df = temps_ds.df.copy()
-        full_df = temps_ds.df.copy()
+        full_df = pd.read_csv(self.csv_path)
 
-        # Obtener sujetos únicos y género para estratificar por persona
-        subjects_df = full_df[['subject_id', 'gender']].drop_duplicates()
-
-
-        # División de datos en 70% train, 15% val, 15% test
-        train_subs, temp_subs = train_test_split(
-            subjects_df,
-            test_size=0.3,
-            stratify=subjects_df['gender'],
-            random_state=42
-        )
-
-        val_subs, test_subs = train_test_split(
-            temp_subs,
-            test_size=0.5,
-            stratify=temp_subs['gender'],
-            random_state=42
-        )
-
-        # Transform MultiPIE -> Resnet50
         transform = transforms.Compose([
             transforms.Resize((224, 224)),
             transforms.ToTensor(),
@@ -85,208 +53,108 @@ class MultiPIEDataModule(L.LightningDataModule):
                 std=[0.229, 0.224, 0.225]
             )
         ])
+    
+        if stage == "fit" or stage is None:
+            #TRAIN
+            raw_train_df = full_df[full_df['split']=='train'].copy()
 
-        # Asignación en dataframes
-        if stage == "fit":
+            # Conseguir un subconjunto divisible entre 4
+            def enforce_divisibility(group):
+                target_n = (len(group) // 4) * 4 # Si hay 37, 37//4 = 9. 9*4 = 36.
+                if target_n == 0:
+                    return pd.DataFrame(columns=group.columns)
+                return group.sample(n=target_n, random_state=42)
+                
+            raw_train_df = raw_train_df.groupby(
+                ['temp_label', 'gender', 'camera_id', 'illumination_id'], 
+                group_keys=False
+            ).apply(enforce_divisibility).reset_index(drop=True)
 
-            raw_train_df = full_df[full_df['subject_id'].isin(train_subs['subject_id'])]
-            raw_val_df = full_df[full_df['subject_id'].isin(val_subs['subject_id'])]
 
-
-            if self.bias_type == "pose":
-                raw_train_df = self._add_pose_column(raw_train_df)
-                raw_val_df = self._add_pose_column(raw_val_df)
-
-
+            raw_train_df = self._add_pose_column(raw_train_df)
             train_df = self._apply_experiment_bias(raw_train_df)
-            val_df = self._apply_experiment_bias(raw_val_df)
+
 
             self._print_contingency_table(train_df, stage_name="train")
-            # self._print_contingency_table(val_df, stage_name="val")
-    
             self.train_ds = MultiPIEDataset(self.data_dir, df=train_df, transform=transform, return_metadata=True)
+
+
+            #VAL
+            raw_val_df = full_df[full_df['split'] == 'val'].copy()
+            raw_val_df = raw_val_df.groupby(
+                ['temp_label', 'gender', 'camera_id', 'illumination_id'], 
+                group_keys=False
+            ).apply(enforce_divisibility).reset_index(drop=True)
+
+
+            raw_val_df = self._add_pose_column(raw_val_df)
+            val_df = self._apply_experiment_bias(raw_val_df)
+
+            
+            self._print_contingency_table(val_df, stage_name="val")
             self.val_ds = MultiPIEDataset(self.data_dir, df=val_df, transform=transform, return_metadata=True)
         
-        if stage == "test":
+        if stage == "test" or stage is None:
+            test_df = full_df[full_df['split']=='test'].copy()
 
-            raw_test_df = full_df[full_df['subject_id'].isin(test_subs['subject_id'])]
+            test_df = self._add_pose_column(test_df)
             
-            #Cambio del tipo de sesgo para testear con un conjunto balanceado en género con todas las cámaras
-            original_bias = self.bias_type
-            if self.bias_type == "pose":
-                self.bias_type = "representational"
-
-            test_df = self._apply_balanced_evaluation(raw_test_df)
-            self.bias_type = original_bias
-
             self._print_contingency_table(test_df, stage_name="test")
             self.test_ds = MultiPIEDataset(self.data_dir, df=test_df, transform=transform, return_metadata=True)
+
 
     # FUNCION PARA OBTENER DATASET BALANCEADO CON LA CLASE MAS BAJA
     def _apply_experiment_bias(self, df: pd.DataFrame) -> pd.DataFrame:
         final_dfs = []
         classes = df['temp_label'].unique()
-        global_limit_N = self.n_limit
 
         for label in classes:
-            # Lógica para determinar el f (genero) y g (pose) segun el tipo de experimento
+            # EXPERIMENTO 3 (DESBALANCEO DE POSE/CÁMARA)
             if self.bias_type == "pose":
-
-                n_req_women = int(global_limit_N * 0.5)
-                n_req_men = global_limit_N - n_req_women
-
-                n_women_frontal = int(n_req_women * self.g_pose)
-                n_women_profile = n_req_women - n_women_frontal
-                
-                n_men_profile = int(n_req_men * self.g_pose)
-                n_men_frontal = n_req_men - n_men_profile
-
-                w_frontal = df[(df['temp_label'] == label) & (df['gender'] == "Female") & (df['pose'] == "frontal")]
-                w_profile = df[(df['temp_label'] == label) & (df['gender'] == "Female") & (df['pose'] == "profile")]
-                m_frontal = df[(df['temp_label'] == label) & (df['gender'] == "Male") & (df['pose'] == "frontal")]
-                m_profile = df[(df['temp_label'] == label) & (df['gender'] == "Male") & (df['pose'] == "profile")]
-
-                sampled_w_f = w_frontal.sample(n=min(n_women_frontal, len(w_frontal)), random_state=42)
-                sampled_w_p = w_profile.sample(n=min(n_women_profile, len(w_profile)), random_state=42)
-                sampled_m_f = m_frontal.sample(n=min(n_men_frontal, len(m_frontal)), random_state=42)
-                sampled_m_p = m_profile.sample(n=min(n_men_profile, len(m_profile)), random_state=42)
-                
-                final_dfs.extend([sampled_w_f, sampled_w_p, sampled_m_f, sampled_m_p])
+                if self.pose_scenario == "H_Frontal_M_Profile":
+                    m_front = df[(df['temp_label'] == label) & (df['gender'] == "Male") & (df['pose'] == "frontal")]
+                    w_prof  = df[(df['temp_label'] == label) & (df['gender'] == "Female") & (df['pose'] == "profile")]
+                    final_dfs.extend([m_front, w_prof])
+                    
+                elif self.pose_scenario == "M_Frontal_H_Profile":
+                    w_front = df[(df['temp_label'] == label) & (df['gender'] == "Female") & (df['pose'] == "frontal")]
+                    m_prof  = df[(df['temp_label'] == label) & (df['gender'] == "Male") & (df['pose'] == "profile")]
+                    final_dfs.extend([w_front, m_prof])
+            
             else:
+                # EXPERIMENTOS 1 y 2 SESGO REPRESENTACIONAL y ESTEREOTÍPICO
                 if self.bias_type == "stereotipical":
                     current_f = self.bias_factor if label == self.target_class else 0.5
-                else:
+                else: # "representational"
                     current_f = self.bias_factor
                 
-                n_req_women = int(global_limit_N * current_f)
-                n_req_men = global_limit_N - n_req_women
-
+                # df ya tiene 27 hombres y 27 mujeres por celda. 
+                # Si f=1.0 -> 100% Mujeres (27), 0% Hombres.
+                # Si f=0.5 -> 50% Mujeres (13), 50% Hombres (14) <- Ojo a los redondeos.
+                
                 available_women = df[(df['temp_label'] == label) & (df['gender'] == "Female")]
                 available_men = df[(df['temp_label'] == label) & (df['gender'] == "Male")]
-
-                sampled_women = available_women.sample(n=min(n_req_women, len(available_women)), random_state=42)
-                sampled_men = available_men.sample(n=min(n_req_men, len(available_men)), random_state=42)
                 
+                # Para asegurar que todos los experimentos tengan EXACTAMENTE el mismo volumen 
+                # (la mitad del dataset total), el total combinado (H+M) siempre debe ser el máximo original (27 por celda).
+                # Usamos groupby para aplicar el ratio celda por celda (por luz y cámara).
+                
+                def sample_group(group_df, ratio):
+                    # ratio es la proporción que queremos conservar de este grupo
+                    # Si el grupo tenía 27, y ratio es 1.0, nos quedamos con 27.
+                    # Si ratio es 0.0, nos quedamos con 0.
+                    target_n = int(len(group_df) * ratio)
+                    if target_n == 0:
+                        return pd.DataFrame(columns=group_df.columns)
+                    return group_df.sample(n=target_n, random_state=42)
+
+                # Aplicamos el muestreo respetando las proporciones
+                sampled_women = available_women.groupby(['camera_id', 'illumination_id'], group_keys=False).apply(lambda g: sample_group(g, current_f)).reset_index(drop=True)
+                sampled_men = available_men.groupby(['camera_id', 'illumination_id'], group_keys=False).apply(lambda g: sample_group(g, 1.0 - current_f)).reset_index(drop=True)
+
                 final_dfs.extend([sampled_women, sampled_men])
 
-        return pd.concat(final_dfs).sample(frac=1, random_state=42).reset_index(drop=True)
-    
-    def _apply_balanced_evaluation(self, df:pd.DataFrame) -> pd.DataFrame:
-        """
-        Fuerza a que los conjuntos de validación y test sean exactamente
-        50/50 (hombre/mujer) para cada expresion, además, las expresiones estarán balanceadas
-        :param df: Dataframe
-        """
-        final_dfs = []
-        classes = df['temp_label'].unique()
-        global_min_limit = 99999999
-
-
-        if self.bias_type == "pose":
-            for label in classes:
-                n_wf = len(df[(df['temp_label'] == label) & (df['gender'] == 'Female') & (df['pose'] == 'frontal')])
-                n_wp = len(df[(df['temp_label'] == label) & (df['gender'] == 'Female') & (df['pose'] == 'profile')])
-                n_mf = len(df[(df['temp_label'] == label) & (df['gender'] == 'Male') & (df['pose'] == 'frontal')])
-                n_mp = len(df[(df['temp_label'] == label) & (df['gender'] == 'Male') & (df['pose'] == 'profile')])
-                
-                local_limit = min(n_wf, n_wp, n_mf, n_mp)
-                if local_limit < global_min_limit:
-                    global_min_limit = local_limit
-
-            if global_min_limit > 0:
-                for label in classes:
-                    w_frontal = df[(df['temp_label'] == label) & (df['gender'] == 'Female') & (df['pose'] == 'frontal')]
-                    w_profile = df[(df['temp_label'] == label) & (df['gender'] == 'Female') & (df['pose'] == 'profile')]
-                    m_frontal = df[(df['temp_label'] == label) & (df['gender'] == 'Male') & (df['pose'] == 'frontal')]
-                    m_profile = df[(df['temp_label'] == label) & (df['gender'] == 'Male') & (df['pose'] == 'profile')]
-
-                    sampled_wf = w_frontal.sample(n=global_min_limit, random_state=42)
-                    sampled_wp = w_profile.sample(n=global_min_limit, random_state=42)
-                    sampled_mf = m_frontal.sample(n=global_min_limit, random_state=42)
-                    sampled_mp = m_profile.sample(n=global_min_limit, random_state=42)
-                    
-                    final_dfs.extend([sampled_wf, sampled_wp, sampled_mf, sampled_mp])
-
-        else:
-            for label in classes:
-                n_women = len(df[(df['temp_label'] == label) & (df['gender'] == 'Female')])
-                n_men = len(df[(df['temp_label'] == label) & (df['gender'] == 'Male')])
-                
-                local_limit = min(n_women, n_men)
-                if local_limit < global_min_limit:
-                    global_min_limit = local_limit
-
-            if global_min_limit > 0:
-                for label in classes:
-                    available_women = df[(df['temp_label'] == label) & (df['gender'] == 'Female')]
-                    available_men = df[(df['temp_label'] == label) & (df['gender'] == 'Male')]
-
-                    sampled_women = available_women.sample(n=global_min_limit, random_state=42)
-                    sampled_men = available_men.sample(n=global_min_limit, random_state=42)
-                    
-                    final_dfs.extend([sampled_women, sampled_men])
-                    
-        return pd.concat(final_dfs).sample(frac=1, random_state=42).reset_index(drop=True)
-
-    # ESTA FUNCION DE MOMENTO NO SE USA
-    # Esta funcion calcula el número máximo de elementos que puede haber por clase que satisfaga el ratio de género
-    def _apply_experiment_bias_unbalanced_expr(self, df:pd.DataFrame) -> pd.DataFrame:
-
-        final_dfs = []
-        classes = df['temp_label'].unique()
-        # print(f"Temp label antes de las transformaciones {classes}")
-
-
-
-        for label in classes:
-            if self.bias_type == 'stereotypical':
-                if label == self.target_class:
-                    target_ratio = self.bias_factor
-                else:
-                    target_ratio = 0.5
-            else: # bias_type == 'representational'
-                target_ratio = self.bias_factor
-            
-
-            available_women = df[(df['temp_label'] == label) & (df['gender'] == "Female")]
-            available_men = df[(df['temp_label'] == label) & (df['gender'] == "Male")]
-
-            n_women_avail = len(available_women)
-            n_men_avail = len(available_men)
-
-            if target_ratio == 0:
-                n_req_women = 0
-                n_req_men = n_men_avail
-            elif target_ratio == 1:
-                n_req_women = n_women_avail
-                n_req_men = 0
-            else:
-                max_n_by_women = int(n_women_avail / target_ratio)
-                max_n_by_men = int(n_men_avail / (1-target_ratio))
-
-                limit_N = min(max_n_by_men, max_n_by_women)
-
-                n_req_women = int(limit_N * target_ratio)
-                n_req_men = limit_N - n_req_women
-
-            # print(f"Label {label}: Avail Women: {n_women_avail}, Avail Men: {n_men_avail}")
-            # print(f"Label {label}: Requested Women: {n_req_women}, Requested Men: {n_req_men}")
-            
-            #Sample data
-            if n_req_women > 0:
-                sampled_women = available_women.sample(n=n_req_women, random_state = 42)
-            else:
-                sampled_women = pd.DataFrame(columns=df.columns)
-            
-            if n_req_men > 0:
-                sampled_men = available_men.sample(n=n_req_men, random_state = 42)
-            else:
-                sampled_men = pd.DataFrame(columns=df.columns)
-            
-            final_dfs.append(sampled_women)
-            final_dfs.append(sampled_men)
-        
-        return pd.concat(final_dfs).sample(frac=1, random_state=42).reset_index(drop=True)
+        return pd.concat(final_dfs, ignore_index=True)
     
     def _add_pose_column(self, df: pd.DataFrame) -> pd.DataFrame:
         """Asigna la clase 'frontal' o 'profile' segun la camara y filtra el resto """
@@ -304,7 +172,7 @@ class MultiPIEDataModule(L.LightningDataModule):
 
     # Print para ver los parámetros del experimento y la tabla con los géneros y labels
     def _print_contingency_table(self, df, stage_name="train") -> None:
-        print(f"\n--- Contingency table: {self.bias_type}, f={self.bias_factor}, g={self.g_pose} ---")
+        print(f"\n--- Contingency table {stage_name}: {self.bias_type}, f={self.bias_factor}, pose={self.pose_scenario} ---")
         if 'pose' in df.columns:
             ct = pd.crosstab(df['temp_label'], [df['gender'], df['pose']])
         else:
@@ -317,7 +185,7 @@ class MultiPIEDataModule(L.LightningDataModule):
         log_dir = f"dataset_logs_fase2-c{t_class}"
         os.makedirs(log_dir, exist_ok=True)
         
-        filename = f"{log_dir}/{stage_name}_dist_{self.bias_type}_f{self.bias_factor}_g{self.g_pose}.csv"
+        filename = f"{log_dir}/{stage_name}_dist_{self.bias_type}_f{self.bias_factor}_{self.pose_scenario}.csv"
         ct.to_csv(filename)
 
     # Funciones del DataModule
