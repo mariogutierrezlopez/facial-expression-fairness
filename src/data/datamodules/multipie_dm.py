@@ -108,9 +108,55 @@ class MultiPIEDataModule(L.LightningDataModule):
         final_dfs = []
         classes = df['temp_label'].unique()
 
+        # Función auxiliar para reducir el volumen a la mitad (50%) 
+        # manteniendo la equidad en la distribución de cámaras e iluminación.
+        def sample_half(group_df):
+            target_n = int(len(group_df) * 0.5)
+            if target_n == 0:
+                return pd.DataFrame(columns=group_df.columns)
+            return group_df.sample(n=target_n, random_state=42)
+
         for label in classes:
-            # EXPERIMENTO 3 (DESBALANCEO DE POSE/CÁMARA)
-            if self.bias_type == "pose":
+            
+            # ---------------------------------------------------------
+            # NUEVO: SESGO ESTEREOTÍPICO POR POSE (Solo en target_class)
+            # ---------------------------------------------------------
+            if self.bias_type == "stereotypical_pose":
+                
+                # A. CLASE OBJETIVO (donde aplicamos el experimento de pose)
+                if label == self.target_class:
+                    if self.pose_scenario == "H_Frontal_M_Profile":
+                        m_front = df[(df['temp_label'] == label) & (df['gender'] == "Male") & (df['pose'] == "frontal")]
+                        w_prof  = df[(df['temp_label'] == label) & (df['gender'] == "Female") & (df['pose'] == "profile")]
+                        final_dfs.extend([m_front, w_prof])
+                        
+                    elif self.pose_scenario == "M_Frontal_H_Profile": # (Mujeres de frente, Hombres de perfil)
+                        w_front = df[(df['temp_label'] == label) & (df['gender'] == "Female") & (df['pose'] == "frontal")]
+                        m_prof  = df[(df['temp_label'] == label) & (df['gender'] == "Male") & (df['pose'] == "profile")]
+                        final_dfs.extend([w_front, m_prof])
+                        
+                    elif self.pose_scenario == "Balanced_Half":
+                        # Experimento 3: Pose balanceada pero dividida entre 2 para igualar volúmenes
+                        target_df = df[df['temp_label'] == label]
+                        sampled_target = target_df.groupby(
+                            ['gender', 'camera_id', 'illumination_id'], 
+                            group_keys=False
+                        ).apply(sample_half).reset_index(drop=True)
+                        final_dfs.append(sampled_target)
+                
+                # B. RESTO DE CLASES (Balanceadas en pose y género, pero divididas entre 2)
+                else:
+                    other_df = df[df['temp_label'] == label]
+                    sampled_other = other_df.groupby(
+                        ['gender', 'camera_id', 'illumination_id'], 
+                        group_keys=False
+                    ).apply(sample_half).reset_index(drop=True)
+                    final_dfs.append(sampled_other)
+
+            # ---------------------------------------------------------
+            # EXPERIMENTO 3 ORIGINAL (DESBALANCEO DE POSE/CÁMARA GLOBAL)
+            # ---------------------------------------------------------
+            elif self.bias_type == "pose":
                 if self.pose_scenario == "H_Frontal_M_Profile":
                     m_front = df[(df['temp_label'] == label) & (df['gender'] == "Male") & (df['pose'] == "frontal")]
                     w_prof  = df[(df['temp_label'] == label) & (df['gender'] == "Female") & (df['pose'] == "profile")]
@@ -120,35 +166,35 @@ class MultiPIEDataModule(L.LightningDataModule):
                     w_front = df[(df['temp_label'] == label) & (df['gender'] == "Female") & (df['pose'] == "frontal")]
                     m_prof  = df[(df['temp_label'] == label) & (df['gender'] == "Male") & (df['pose'] == "profile")]
                     final_dfs.extend([w_front, m_prof])
+                    
+                elif self.pose_scenario == "H_Frontal_M_Frontal":
+                    m_front = df[(df['temp_label'] == label) & (df['gender'] == "Male") & (df['pose'] == "frontal")]
+                    w_front = df[(df['temp_label'] == label) & (df['gender'] == "Female") & (df['pose'] == "frontal")]
+                    final_dfs.extend([m_front, w_front])
+                    
+                elif self.pose_scenario == "H_Profile_M_Profile":
+                    m_prof  = df[(df['temp_label'] == label) & (df['gender'] == "Male") & (df['pose'] == "profile")]
+                    w_prof  = df[(df['temp_label'] == label) & (df['gender'] == "Female") & (df['pose'] == "profile")]
+                    final_dfs.extend([m_prof, w_prof])
             
+            # ---------------------------------------------------------
+            # EXPERIMENTOS 1 y 2 ORIGINALES (SESGO REPRESENTACIONAL y ESTEREOTÍPICO)
+            # ---------------------------------------------------------
             else:
-                # EXPERIMENTOS 1 y 2 SESGO REPRESENTACIONAL y ESTEREOTÍPICO
                 if self.bias_type == "stereotipical":
                     current_f = self.bias_factor if label == self.target_class else 0.5
                 else: # "representational"
                     current_f = self.bias_factor
                 
-                # df ya tiene 27 hombres y 27 mujeres por celda. 
-                # Si f=1.0 -> 100% Mujeres (27), 0% Hombres.
-                # Si f=0.5 -> 50% Mujeres (13), 50% Hombres (14) <- Ojo a los redondeos.
-                
                 available_women = df[(df['temp_label'] == label) & (df['gender'] == "Female")]
                 available_men = df[(df['temp_label'] == label) & (df['gender'] == "Male")]
                 
-                # Para asegurar que todos los experimentos tengan EXACTAMENTE el mismo volumen 
-                # (la mitad del dataset total), el total combinado (H+M) siempre debe ser el máximo original (27 por celda).
-                # Usamos groupby para aplicar el ratio celda por celda (por luz y cámara).
-                
                 def sample_group(group_df, ratio):
-                    # ratio es la proporción que queremos conservar de este grupo
-                    # Si el grupo tenía 27, y ratio es 1.0, nos quedamos con 27.
-                    # Si ratio es 0.0, nos quedamos con 0.
                     target_n = int(len(group_df) * ratio)
                     if target_n == 0:
                         return pd.DataFrame(columns=group_df.columns)
                     return group_df.sample(n=target_n, random_state=42)
 
-                # Aplicamos el muestreo respetando las proporciones
                 sampled_women = available_women.groupby(['camera_id', 'illumination_id'], group_keys=False).apply(lambda g: sample_group(g, current_f)).reset_index(drop=True)
                 sampled_men = available_men.groupby(['camera_id', 'illumination_id'], group_keys=False).apply(lambda g: sample_group(g, 1.0 - current_f)).reset_index(drop=True)
 

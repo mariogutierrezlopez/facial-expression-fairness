@@ -282,40 +282,55 @@ if __name__ == "__main__":
         # 1. RECOPILAR TODOS LOS EXPERIMENTOS POSIBLES
         all_experiments = []
         
-
-                
         # Pose (2)
-        POSIBLE_POSE_VALUES = ["H_Frontal_M_Profile","M_Frontal_H_Profile"]
-        for pose in POSIBLE_POSE_VALUES:
-            all_experiments.append({
-                "exp_name": f"Pose_{pose}",
-                "bias_type": "pose",
-                "bias_factor": 0.5, # Valor por defecto que tuvieras
-                "target_class": None,
-                "pose_scenario": pose
-            })
+        # POSIBLE_POSE_VALUES = ["H_Frontal_M_Profile","M_Frontal_H_Profile"]
+        # POSIBLE_POSE_VALUES = {"H_Frontal_M_Frontal", "H_Profile_M_Profile"}
+        # for pose in POSIBLE_POSE_VALUES:
+        #     all_experiments.append({
+        #         "exp_name": f"Pose_{pose}",
+        #         "bias_type": "pose",
+        #         "bias_factor": 0.5, # Valor por defecto que tuvieras
+        #         "target_class": None,
+        #         "pose_scenario": pose
+        #     })
+
+        TARGET_CLASS_IDS = [3, 4, 5, 0, 1, 2]
+        STEREO_POSE_SCENARIOS = [
+            "H_Frontal_M_Profile", 
+            "M_Frontal_H_Profile",
+        ]
         
-        # Representacionales (5)
-        for f in BIAS_FACTORS:
-            all_experiments.append({
-                "exp_name": f"Representational_bias_f{f}",
-                "bias_type": "representational",
-                "bias_factor": f,
-                "target_class": None,
-                "pose_scenario": ""
-            })
-            
-        # # Estereotípicos (30)
-        TARGET_CLASS_IDS = [0,1,2,3,4,5]
         for target_id in TARGET_CLASS_IDS:
-            for f in BIAS_FACTORS:
+            for pose_scen in STEREO_POSE_SCENARIOS:
                 all_experiments.append({
-                    "exp_name": f"Stereotipical_bias_c{target_id}_f{f}",
-                    "bias_type": "stereotipical",
-                    "bias_factor": f,
+                    "exp_name": f"Stereotypical_pose_c{target_id}_{pose_scen}",
+                    "bias_type": "stereotypical_pose", # Debe coincidir con el DataModule
+                    "bias_factor": 0.5, # No se usa realmente en este código, pero mantenlo por compatibilidad
                     "target_class": target_id,
-                    "pose_scenario": ""
+                    "pose_scenario": pose_scen
                 })
+        
+        # # Representacionales (5)
+        # for f in BIAS_FACTORS:
+        #     all_experiments.append({
+        #         "exp_name": f"Representational_bias_f{f}",
+        #         "bias_type": "representational",
+        #         "bias_factor": f,
+        #         "target_class": None,
+        #         "pose_scenario": ""
+        #     })
+            
+        # # # Estereotípicos (30)
+        # TARGET_CLASS_IDS = [0,1,2,3,4,5]
+        # for target_id in TARGET_CLASS_IDS:
+        #     for f in BIAS_FACTORS:
+        #         all_experiments.append({
+        #             "exp_name": f"Stereotipical_bias_c{target_id}_f{f}",
+        #             "bias_type": "stereotipical",
+        #             "bias_factor": f,
+        #             "target_class": target_id,
+        #             "pose_scenario": ""
+        #         })
 
         # 2. FILTRAR SOLO LOS QUE LE TOCAN A ESTA TERMINAL
         my_experiments = all_experiments[args.split_idx :: args.num_splits]
