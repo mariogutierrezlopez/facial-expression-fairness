@@ -34,12 +34,18 @@ class AffectNetDataModule(L.LightningDataModule):
 
     def setup(self, stage:Optional[str]=None) -> None:
 
-        # Tratamieto de datos para el dataset de train/val,
-        #   1. Generar columna 'gender_male_bin' que contiene 1 si el sujeto es hombre y 0 si es mujer
-        #   2. Eliminar archivos que no existen en el sistema
-        #   3. Columna 'stratify_col' con {human_label}_{gender} para balancear los conjuntos train/val 
-        #       en expresion y género
         train_df = pd.read_csv(self.csv_train_path)
+        if 'quality_bin' in train_df.columns:
+            train_df = train_df.drop(columns=['quality_bin'])
+
+        
+        cols_to_float = [
+            'age', 'gender_male', 'gender_female', 'yaw', 'pitch', 'roll', 
+            'illumination', 'quality_score', 'hf_ratio'
+        ]
+        for col in cols_to_float:
+            if col in train_df.columns:
+                train_df[col] = pd.to_numeric(train_df[col], errors='coerce').fillna(-1.0)
         
         train_df['gender_male_bin'] = (train_df['gender_male'] > 0.5).astype(int)
 
@@ -47,6 +53,14 @@ class AffectNetDataModule(L.LightningDataModule):
         raw_df = train_df[mask].reset_index(drop=True)
 
         test_df = pd.read_csv(self.csv_test_path)
+
+        if 'quality_bin' in test_df.columns:
+            test_df = test_df.drop(columns=['quality_bin'])
+        
+        for col in cols_to_float:
+            if col in test_df.columns:
+                test_df[col] = pd.to_numeric(test_df[col], errors='coerce').fillna(-1.0)
+        
         test_df['gender_male_bin'] = (test_df['gender_male'] > 0.5).astype(int)
         mask = test_df['image_path'].apply(lambda x: os.path.exists(os.path.join(self.data_dir, x)))
         test_df = test_df[mask].reset_index(drop=True)
@@ -58,7 +72,8 @@ class AffectNetDataModule(L.LightningDataModule):
             random_state=42
         )
 
-        transform = transforms.Compose([
+        # 1. Transformaciones base (solo para validación y test)
+        base_transform = transforms.Compose([
             transforms.Resize((224, 224)),
             transforms.ToTensor(),
             transforms.Normalize(
@@ -67,21 +82,31 @@ class AffectNetDataModule(L.LightningDataModule):
             )
         ])
 
+        # 2. Transformaciones de Data Augmentation (SOLO PARA TRAIN)
+        train_transform = transforms.Compose([
+            transforms.Resize((256, 256)), # Hacemos la imagen un poco más grande
+            transforms.RandomCrop((224, 224)), # Recorte aleatorio a 224x224
+            transforms.RandomHorizontalFlip(p=0.5), # Efecto espejo
+            transforms.ColorJitter(brightness=0.2, contrast=0.2), # Variar un poco la luz
+            transforms.ToTensor(),
+            transforms.Normalize(
+                mean=[0.485, 0.456, 0.406],
+                std=[0.229, 0.224, 0.225]
+            )
+        ])
+
         if stage == "fit" or stage is None:
-            train_balanced_df = self._apply_expression_balance_with_gender_prior(raw_df)
-            # val_balanced_df = self._apply_strict_balance(val_df)
+            # Le pasamos raw_df (todas las imágenes) y el train_transform con Data Augmentation
+            self.train_ds = AffectNetDataset(self.data_dir, df=raw_df, transform=train_transform, return_metadata=False)
             
-            self._print_contingency_table(train_balanced_df, stage_name="train")
+            # Validación usa base_transform (sin recortes aleatorios)
+            self.val_ds = AffectNetDataset(self.data_dir, df=val_df, transform=base_transform, return_metadata=False)
+            
+            self._print_contingency_table(raw_df, stage_name="train")
             self._print_contingency_table(val_df, stage_name="val")
-    
-            self.train_ds = AffectNetDataset(self.data_dir, df=train_balanced_df, transform=transform, return_metadata=False)
-            self.val_ds = AffectNetDataset(self.data_dir, df=val_df, transform=transform, return_metadata=False)
         
         if stage == "test" or stage is None:
-            # test_balanced_df = self._apply_strict_balance(test_df)
-
-            # Experimentos de iluminación, transforms nuevo
-
+            # Experimentos de iluminación
             test_transforms = transforms.Compose([
                 transforms.Resize((224,224)),
                 transforms.Lambda(lambda img: TF.adjust_brightness(img, self.test_brightness_factor)),

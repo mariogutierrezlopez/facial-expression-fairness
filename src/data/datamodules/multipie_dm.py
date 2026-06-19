@@ -17,6 +17,23 @@ POSE_BINS = {
     "profile": ["12_0", "09_0", "11_0"],
 }
 
+# ILLUMINATION_BINS = {
+#     # Luces directas / Flash activo
+#     "illuminated": ["01", "02", "03", "06", "07", "08", "09", "15", "16", "17"], 
+    
+#     # Luz ambiental / Sombras / Foco trasero o apagado
+#     "dark": ["00", "04", "05", "10", "11", "12", "13", "14", "18", "19"]         
+# }
+
+
+ILLUMINATION_BINS = {
+    # Luces directas / Flash activo
+    "illuminated": ["06", "07"], 
+    
+    # Luz ambiental / Sombras / Foco trasero o apagado
+    "dark": ["00", "19"]         
+}
+
 class MultiPIEDataModule(L.LightningDataModule):
     def __init__(self,
                  data_dir: str,
@@ -27,7 +44,8 @@ class MultiPIEDataModule(L.LightningDataModule):
                  bias_factor: float = 0.5,
                  n_limit:int = 0,
                  target_class: int | None = None,
-                 pose_scenario: str = "H_Frontal_M_Profile"
+                 pose_scenario: str = "H_Frontal_M_Profile",
+                 brightness_scenario: str = "H_Illuminated_M_Dark"
     ):
         super().__init__()
         self.data_dir = data_dir
@@ -40,6 +58,8 @@ class MultiPIEDataModule(L.LightningDataModule):
         self.target_class = target_class
 
         self.pose_scenario = pose_scenario
+        self.brightness_scenario = brightness_scenario
+
 
     # Función obligatoria de DataModule, settea la distribución de datos
     def setup(self, stage) -> None:
@@ -72,6 +92,7 @@ class MultiPIEDataModule(L.LightningDataModule):
 
 
             raw_train_df = self._add_pose_column(raw_train_df)
+            raw_train_df = self._add_brightness_column(raw_train_df)
             train_df = self._apply_experiment_bias(raw_train_df)
 
 
@@ -88,6 +109,7 @@ class MultiPIEDataModule(L.LightningDataModule):
 
 
             raw_val_df = self._add_pose_column(raw_val_df)
+            raw_val_df = self._add_brightness_column(raw_val_df)
             val_df = self._apply_experiment_bias(raw_val_df)
 
             
@@ -98,6 +120,7 @@ class MultiPIEDataModule(L.LightningDataModule):
             test_df = full_df[full_df['split']=='test'].copy()
 
             test_df = self._add_pose_column(test_df)
+            test_df = self._add_brightness_column(test_df)
             
             self._print_contingency_table(test_df, stage_name="test")
             self.test_ds = MultiPIEDataset(self.data_dir, df=test_df, transform=transform, return_metadata=True)
@@ -117,26 +140,61 @@ class MultiPIEDataModule(L.LightningDataModule):
             return group_df.sample(n=target_n, random_state=42)
 
         for label in classes:
+
+            # ---------------------------------------------------------
+            # SESGO ESTEREOTÍPICO POR ILUMINACIÓN (Solo target_class)
+            # ---------------------------------------------------------
+            if self.bias_type == "stereotypical_brightness":
+                if label == self.target_class:
+                    if self.brightness_scenario == "H_Illuminated_M_Dark":
+                        m_ill = df[(df['temp_label'] == label) & (df['gender'] == "Male") & (df['brightness'] == "illuminated")]
+                        w_dark  = df[(df['temp_label'] == label) & (df['gender'] == "Female") & (df['brightness'] == "dark")]
+                        final_dfs.extend([m_ill, w_dark])
+                        
+                    elif self.brightness_scenario == "M_Illuminated_H_Dark":
+                        w_ill = df[(df['temp_label'] == label) & (df['gender'] == "Female") & (df['brightness'] == "illuminated")]
+                        m_dark  = df[(df['temp_label'] == label) & (df['gender'] == "Male") & (df['brightness'] == "dark")]
+                        final_dfs.extend([w_ill, m_dark])
+                else:
+                    other_df = df[df['temp_label'] == label]
+                    sampled_other = other_df.groupby(
+                        ['gender', 'camera_id', 'illumination_id'], 
+                        group_keys=False
+                    ).apply(sample_half).reset_index(drop=True)
+                    final_dfs.append(sampled_other)
+
+            # ---------------------------------------------------------
+            # SESGO REPRESENTACIONAL POR ILUMINACIÓN (Todas las clases)
+            # ---------------------------------------------------------
+            elif self.bias_type == "brightness":
+                if self.brightness_scenario == "H_Illuminated_M_Dark":
+                    m_ill = df[(df['temp_label'] == label) & (df['gender'] == "Male") & (df['brightness'] == "illuminated")]
+                    w_dark  = df[(df['temp_label'] == label) & (df['gender'] == "Female") & (df['brightness'] == "dark")]
+                    final_dfs.extend([m_ill, w_dark])
+                    
+                elif self.brightness_scenario == "M_Illuminated_H_Dark":
+                    w_ill = df[(df['temp_label'] == label) & (df['gender'] == "Female") & (df['brightness'] == "illuminated")]
+                    m_dark  = df[(df['temp_label'] == label) & (df['gender'] == "Male") & (df['brightness'] == "dark")]
+                    final_dfs.extend([w_ill, m_dark])
             
             # ---------------------------------------------------------
-            # NUEVO: SESGO ESTEREOTÍPICO POR POSE (Solo en target_class)
+            # SESGO ESTEREOTÍPICO POR POSE (Solo en target_class)
             # ---------------------------------------------------------
-            if self.bias_type == "stereotypical_pose":
+            elif self.bias_type == "stereotypical_pose": # <--- CORREGIDO AQUÍ (ahora es elif)
                 
-                # A. CLASE OBJETIVO (donde aplicamos el experimento de pose)
+                # A. CLASE OBJETIVO
                 if label == self.target_class:
                     if self.pose_scenario == "H_Frontal_M_Profile":
                         m_front = df[(df['temp_label'] == label) & (df['gender'] == "Male") & (df['pose'] == "frontal")]
                         w_prof  = df[(df['temp_label'] == label) & (df['gender'] == "Female") & (df['pose'] == "profile")]
                         final_dfs.extend([m_front, w_prof])
                         
-                    elif self.pose_scenario == "M_Frontal_H_Profile": # (Mujeres de frente, Hombres de perfil)
+                    elif self.pose_scenario == "M_Frontal_H_Profile":
                         w_front = df[(df['temp_label'] == label) & (df['gender'] == "Female") & (df['pose'] == "frontal")]
                         m_prof  = df[(df['temp_label'] == label) & (df['gender'] == "Male") & (df['pose'] == "profile")]
                         final_dfs.extend([w_front, m_prof])
                         
                     elif self.pose_scenario == "Balanced_Half":
-                        # Experimento 3: Pose balanceada pero dividida entre 2 para igualar volúmenes
                         target_df = df[df['temp_label'] == label]
                         sampled_target = target_df.groupby(
                             ['gender', 'camera_id', 'illumination_id'], 
@@ -144,7 +202,7 @@ class MultiPIEDataModule(L.LightningDataModule):
                         ).apply(sample_half).reset_index(drop=True)
                         final_dfs.append(sampled_target)
                 
-                # B. RESTO DE CLASES (Balanceadas en pose y género, pero divididas entre 2)
+                # B. RESTO DE CLASES
                 else:
                     other_df = df[df['temp_label'] == label]
                     sampled_other = other_df.groupby(
@@ -178,12 +236,12 @@ class MultiPIEDataModule(L.LightningDataModule):
                     final_dfs.extend([m_prof, w_prof])
             
             # ---------------------------------------------------------
-            # EXPERIMENTOS 1 y 2 ORIGINALES (SESGO REPRESENTACIONAL y ESTEREOTÍPICO)
+            # EXPERIMENTOS 1 y 2 ORIGINALES (SESGO REPRESENTACIONAL y ESTEREOTÍPICO POR GÉNERO)
             # ---------------------------------------------------------
             else:
                 if self.bias_type == "stereotipical":
                     current_f = self.bias_factor if label == self.target_class else 0.5
-                else: # "representational"
+                else: 
                     current_f = self.bias_factor
                 
                 available_women = df[(df['temp_label'] == label) & (df['gender'] == "Female")]
@@ -201,7 +259,7 @@ class MultiPIEDataModule(L.LightningDataModule):
                 final_dfs.extend([sampled_women, sampled_men])
 
         return pd.concat(final_dfs, ignore_index=True)
-    
+
     def _add_pose_column(self, df: pd.DataFrame) -> pd.DataFrame:
         """Asigna la clase 'frontal' o 'profile' segun la camara y filtra el resto """
         df = df.copy()
@@ -215,23 +273,40 @@ class MultiPIEDataModule(L.LightningDataModule):
         df['pose'] = df['camera_id'].apply(map_pose)
 
         return df[df['pose'] != "other"] 
+    
+    def _add_brightness_column(self, df: pd.DataFrame) -> pd.DataFrame:
+        df = df.copy()
+
+        def map_brightness(ill):
+            ill_str = str(ill).zfill(2) # Ajusta el zfill si tus IDs en el CSV no tienen el '0' a la izquierda (ej. "1" vs "01")
+            if ill_str in ILLUMINATION_BINS["illuminated"]: return "illuminated"
+            if ill_str in ILLUMINATION_BINS["dark"]: return "dark"
+            return "other"
+
+        df['brightness'] = df['illumination_id'].apply(map_brightness)
+        return df[df['brightness'] != "other"]
+    
 
     # Print para ver los parámetros del experimento y la tabla con los géneros y labels
     def _print_contingency_table(self, df, stage_name="train") -> None:
-        print(f"\n--- Contingency table {stage_name}: {self.bias_type}, f={self.bias_factor}, pose={self.pose_scenario} ---")
-        if 'pose' in df.columns:
+        scenario = self.brightness_scenario if "brightness" in self.bias_type else self.pose_scenario
+        
+        print(f"\n--- Contingency table {stage_name}: {self.bias_type}, f={self.bias_factor}, scenario={scenario} ---")
+        
+        if "brightness" in self.bias_type and 'brightness' in df.columns:
+            ct = pd.crosstab(df['temp_label'], [df['gender'], df['brightness']])
+        elif 'pose' in df.columns:
             ct = pd.crosstab(df['temp_label'], [df['gender'], df['pose']])
         else:
             ct = pd.crosstab(df['temp_label'], df['gender'])
             
         print(ct)
 
-        # Guardar tabla en un csv
         t_class = self.target_class if self.target_class is not None else "all"
         log_dir = f"dataset_logs_fase2-c{t_class}"
         os.makedirs(log_dir, exist_ok=True)
         
-        filename = f"{log_dir}/{stage_name}_dist_{self.bias_type}_f{self.bias_factor}_{self.pose_scenario}.csv"
+        filename = f"{log_dir}/{stage_name}_dist_{self.bias_type}_f{self.bias_factor}_{scenario}.csv"
         ct.to_csv(filename)
 
     # Funciones del DataModule

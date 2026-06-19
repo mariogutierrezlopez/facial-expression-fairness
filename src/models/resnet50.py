@@ -40,13 +40,13 @@ class ResNet50(L.LightningModule):
         # Loss function and metrics
 
         # # Funcion FocalLoss autoimplementada, alpha da más importancia a unas variables que a otras para contrarrestar el desbalance
-        # if weights_tensor is not None:
-        #     self.register_buffer('class_weights', weights_tensor)
-        #     self.loss = FocalLoss(alpha=self.class_weights, gamma=2.0)
-        # else:
-        #     self.loss = FocalLoss(alpha=None, gamma=2.0)
+        if weights_tensor is not None:
+            self.register_buffer('class_weights', weights_tensor)
+            self.loss = FocalLoss(alpha=self.class_weights, gamma=2.0)
+        else:
+            self.loss = FocalLoss(alpha=None, gamma=2.0)
         
-        self.loss = nn.CrossEntropyLoss()
+        # self.loss = nn.CrossEntropyLoss()
         
         
         
@@ -125,6 +125,7 @@ class ResNet50(L.LightningModule):
         gender_male = meta.get("gender_male", torch.ones_like(y) * -1)
         gender_female = meta.get("gender_female", torch.ones_like(y) * -1)
         illumination = meta.get("illumination", (torch.ones_like(y).float() * -1))
+        pose = meta.get("pose", torch.zeros((x.size(0), 3)))
 
 
         logits, embeddings = self(x, return_embeddings=True)
@@ -143,7 +144,8 @@ class ResNet50(L.LightningModule):
             "embeddings": embeddings.detach().cpu(),
             "gender_male": gender_male.detach().cpu(),
             "gender_female": gender_female.detach().cpu(),
-            "illumination": illumination.detach().cpu()
+            "illumination": illumination.detach().cpu(),
+            "pose": pose.detach().cpu()
         })
 
         # LOG loss and acc
@@ -190,6 +192,8 @@ class ResNet50(L.LightningModule):
             all_embeddings = torch.cat([x["embeddings"] for x in self.test_step_outputs])
             all_illumination = torch.cat([x["illumination"] for x in self.test_step_outputs])
 
+            all_pose = torch.cat([x["pose"] for x in self.test_step_outputs])
+
             # Recall por género
             all_male = torch.cat([x["gender_male"] for x in self.test_step_outputs])
             all_female = torch.cat([x["gender_female"] for x in self.test_step_outputs])
@@ -224,7 +228,8 @@ class ResNet50(L.LightningModule):
                 'targets': all_targets,
                 'preds': all_preds,
                 'illumination': all_illumination,
-                'gender': gender_combined.cpu()
+                'gender': gender_combined.cpu(),
+                "pose": all_pose
             }, f'test_embeddings_results_{self.dataset_name}.pt')
             print(f"Embeddings guardados en test_embeddings_results_{self.dataset_name}.pt")
 

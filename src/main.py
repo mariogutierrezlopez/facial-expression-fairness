@@ -33,6 +33,7 @@ AFFWILD2_CSV_TEST_PATH = "/home12TB1/database/recognition/faces/affwild2/datafra
 
 # --- HIPERPARÁMETROS GLOBALES ---
 LEARNING_RATE = 1e-3
+# LEARNING_RATE = 1e-5
 BATCH_SIZE = 64
 NUM_WORKERS = 8
 MAX_EPOCHS = 100
@@ -65,7 +66,7 @@ weights = [total / (n_classes * n) for n in num_samples]
 class_weights = torch.tensor(weights, dtype=torch.float32)
 
 
-def run_multipie_experiment(exp_name, bias_type, bias_factor=0.5, target_class=None, test_only=False, ckpt_path=None, sota_test=False, pose_scenario=""):
+def run_multipie_experiment(exp_name, bias_type, bias_factor=0.5, target_class=None, test_only=False, ckpt_path=None, sota_test=False, pose_scenario="", brightness_scenario=""):
 
     if wandb.run is not None:
         wandb.finish()
@@ -78,7 +79,8 @@ def run_multipie_experiment(exp_name, bias_type, bias_factor=0.5, target_class=N
         bias_type=bias_type,
         bias_factor=bias_factor,
         target_class=target_class,
-        pose_scenario=pose_scenario
+        pose_scenario=pose_scenario,
+        brightness_scenario=brightness_scenario
     )
 
     if sota_test:
@@ -95,7 +97,7 @@ def run_multipie_experiment(exp_name, bias_type, bias_factor=0.5, target_class=N
 
     logger = WandbLogger(
         name=exp_name,
-        project="MultiPIE_emotieff_fully_balanced_vggface2",
+        project="MultiPIE_emotieff_fully_balanced_vggface2_brightness",
         log_model="all",
     )
 
@@ -281,6 +283,32 @@ if __name__ == "__main__":
         
         # 1. RECOPILAR TODOS LOS EXPERIMENTOS POSIBLES
         all_experiments = []
+
+        BRIGHTNESS_SCENARIOS = ["H_Illuminated_M_Dark", "M_Illuminated_H_Dark"]
+        TARGET_CLASS_IDS = [0, 1, 2, 3, 4, 5]
+
+        # Representacional (2 experimentos)
+        for bright_scen in BRIGHTNESS_SCENARIOS:
+            all_experiments.append({
+                "exp_name": f"Representational_brightness_{bright_scen}",
+                "bias_type": "brightness",
+                "bias_factor": 0.5, 
+                "target_class": None,
+                "pose_scenario": "",
+                "brightness_scenario": bright_scen
+            })
+
+        # Estereotípicos (12 experimentos: 6 clases x 2 escenarios)
+        for target_id in TARGET_CLASS_IDS:
+            for bright_scen in BRIGHTNESS_SCENARIOS:
+                all_experiments.append({
+                    "exp_name": f"Stereotypical_brightness_c{target_id}_{bright_scen}",
+                    "bias_type": "stereotypical_brightness",
+                    "bias_factor": 0.5, 
+                    "target_class": target_id,
+                    "pose_scenario": "",
+                    "brightness_scenario": bright_scen
+                })
         
         # Pose (2)
         # POSIBLE_POSE_VALUES = ["H_Frontal_M_Profile","M_Frontal_H_Profile"]
@@ -294,21 +322,21 @@ if __name__ == "__main__":
         #         "pose_scenario": pose
         #     })
 
-        TARGET_CLASS_IDS = [3, 4, 5, 0, 1, 2]
-        STEREO_POSE_SCENARIOS = [
-            "H_Frontal_M_Profile", 
-            "M_Frontal_H_Profile",
-        ]
+        # TARGET_CLASS_IDS = [3, 4, 5, 0, 1, 2]
+        # STEREO_POSE_SCENARIOS = [
+        #     "H_Frontal_M_Profile", 
+        #     "M_Frontal_H_Profile",
+        # ]
         
-        for target_id in TARGET_CLASS_IDS:
-            for pose_scen in STEREO_POSE_SCENARIOS:
-                all_experiments.append({
-                    "exp_name": f"Stereotypical_pose_c{target_id}_{pose_scen}",
-                    "bias_type": "stereotypical_pose", # Debe coincidir con el DataModule
-                    "bias_factor": 0.5, # No se usa realmente en este código, pero mantenlo por compatibilidad
-                    "target_class": target_id,
-                    "pose_scenario": pose_scen
-                })
+        # for target_id in TARGET_CLASS_IDS:
+        #     for pose_scen in STEREO_POSE_SCENARIOS:
+        #         all_experiments.append({
+        #             "exp_name": f"Stereotypical_pose_c{target_id}_{pose_scen}",
+        #             "bias_type": "stereotypical_pose", # Debe coincidir con el DataModule
+        #             "bias_factor": 0.5, # No se usa realmente en este código, pero mantenlo por compatibilidad
+        #             "target_class": target_id,
+        #             "pose_scenario": pose_scen
+        #         })
         
         # # Representacionales (5)
         # for f in BIAS_FACTORS:
@@ -355,6 +383,7 @@ if __name__ == "__main__":
                 ckpt_path=current_ckpt,
                 sota_test=args.sota,
                 pose_scenario=exp['pose_scenario'],
+                brightness_scenario=exp.get('brightness_scenario', "")
             )
 
 

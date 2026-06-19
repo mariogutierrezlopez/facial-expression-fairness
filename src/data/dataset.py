@@ -116,6 +116,13 @@ class AffectNetDataset(VisionDataset):
         
         # Lógica para devolver metadatos:
         if self.return_metadata:
+
+            pose = torch.tensor([
+                row.get('yaw', 0.0), 
+                row.get('pitch', 0.0), 
+                row.get('roll', 0.0)
+            ], dtype=torch.float32)
+
             demographics = {
                 'age': row['age'],
                 'gender_male': row['gender_male'],
@@ -132,8 +139,8 @@ class AffectNetDataset(VisionDataset):
                 'hf_ratio': row['hf_ratio'],
                 'log_var': row['log_var'],
                 'quality_score': row['quality_score'],
-                'quality_bin': row['quality_bin'],
-                'illumination': row['illumination']
+                'illumination': row['illumination'],
+                'pose': pose
             }
 
             return {
@@ -184,6 +191,13 @@ class AffWild2Dataset(VisionDataset):
         
         # Lógica para devolver metadatos:
         if self.return_metadata:
+
+            pose = torch.tensor([
+                row.get('yaw', 0.0), 
+                row.get('pitch', 0.0), 
+                row.get('roll', 0.0)
+            ], dtype=torch.float32)
+
             demographics = {
                 # 'video': row['video'],
                 # 'frame_idx': row['frame_idx'],
@@ -197,7 +211,8 @@ class AffWild2Dataset(VisionDataset):
                 # 'age': row['age'],
                 'illumination': row['illumination'],
                 'gender_male': row['gender_male'],
-                'gender_female': row['gender_female']
+                'gender_female': row['gender_female'],
+                'pose': pose
             }
 
             return {
