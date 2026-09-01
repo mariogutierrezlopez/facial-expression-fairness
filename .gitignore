@@ -10,6 +10,7 @@
 
 # 4. Allow the src folder and everything inside it
 !/src/
+!/assets/
 
 # Don't track log files to keep repository clean
 logs.log
