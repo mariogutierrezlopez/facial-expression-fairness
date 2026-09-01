@@ -7,6 +7,38 @@
 > **Trabajo de Fin de Máster (TFM)** - Máster en Inteligencia Artificial, Universidad Politécnica de Madrid (UPM).  
 > **Autor:** Mario Gutiérrez López
 
+### 1. El problema: Atajos Estadísticos y Sesgo Estereotípico
+En entornos desbalanceados, las CNNs ignoran la morfología facial y explotan atributos demográficos. En este ejemplo, los mapas de activación (LayerCAM/Guided Grad-CAM) demuestran cómo el modelo clasifica erróneamente una emoción fijándose exclusivamente en la barba del sujeto o en el fondo de la habitación.
+
+<!-- ![Mapas de Activación Grad-CAM](assets/gradcam.png) -->
+<img src="assets/gradcam.png" alt="Mapas de Activación Grad-CAM" width="750"/>
+<br>
+*> Figura 1: Análisis de interpretabilidad donde la red ignora los rasgos perioculares y utiliza atajos espurios.*
+
+Además en este entrenamiento donde el modelo solo ha visto hombres (f=0) y mujeres (f=1) muestran un desorden en el espacio latente agrupando las imágenes en clústeres según el género en vez de la expresión a clasificar en MultiPIE. En el medio se muestra un entrenamiento con el género balanceado (f=0.5)
+
+<img src="assets/tsne.png" alt="Comparación t-sne" width="750"/>
+<br>
+*> Figura 2: Análisis del espacio latente mediante t-sne.*
+
+
+### 2. La Solución: Arquitectura Adversarial (Gradient Reversal Layer)
+Para mitigar la absorción de sesgos de bases de datos *in-the-wild* (AffectNet, Aff-Wild2) y preentrenamientos (VGGFace2), se ha implementado una capa GRL. Esta bifurcación penaliza la predicción del género durante la retropropagación, forzando a la red a generar representaciones agnósticas a la demografía.
+
+
+<!-- ![Arquitectura GRL](assets/pipeline_grl.png) -->
+<img src="assets/pipeline_grl.png" alt="Arquitectura GRL" width="750"/>
+<br>
+*> Figura 3: Pipeline de la arquitectura basada en EmotiEff con adaptación de dominio adversarial.*
+
+### 3. El Resultado: Reducción del sesgo de género
+A través de la capa Gradient Reversal Layer se ha conseguido reducir el aprendizaje de atajos espurios de género para clasificar las emociones logrando una mayor recall incluso en fotos de géneros que no ha visto durante el entrenamiento.
+
+<!-- ![Proyección t-SNE](assets/grl_comparison.png) -->
+<img src="assets/grl_comparison.png" alt="Proyección t-SNE" width="750"/>
+<br>
+*> Figura 4: Comparación modelo base con GRL en EmotiEff*
+
 ## Tabla de Contenidos
 - [Descripción del Proyecto](#descripción-del-proyecto)
 - [Hitos del Desarrollo Experimental](#hitos-del-desarrollo-experimental)
